@@ -1,6 +1,3 @@
-import 'package:meta/meta.dart';
-
-@immutable
 class Tef {
   final String id;
   final String description;
