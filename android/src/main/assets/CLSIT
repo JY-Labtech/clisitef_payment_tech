@@ -1,0 +1,37 @@
+[CliSiTef]
+; Nao esquecer de habilitar no AndroidManifest.xml:
+; <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+; a partir da versao 4.0.106.41, "/sdcard" passa a ser o valor padrao para DiretorioTrace
+; DiretorioTrace=/sdcard
+DiretorioTrace=/sdcard
+HabilitaTrace=1
+TraceRotativo=10
+TamanhoTraceRotativo=122880
+
+[CliSiTefI]
+DiretorioTrace=/sdcard
+HabilitaTrace=1
+
+[PinPadCompartilhado]
+Porta=AUTO_USB
+
+[PinPad]
+; Validade 30/07/2019
+; Porta=AUTO_USB
+; ChaveTrace=CAB2B2C6FA78700B Funcional até 31012022
+ChaveTrace=FB20144EE4283A58
+HabilitaTrace=1
+NivelTrace=5
+HabilitaTraceStatusPinPad=1
+MensagemPadrao=CliSiTef
+
+[Geral]
+TransacoesHabilitadas=16;26;122;200
+TransacoesAdicionaisHabilitadas=7;8;16;20;26;122;3028;3203;3321;3322
+TransacoesDesabilitadas=18;27;28;29;35;36;40;42;44
+
+[CarteirasDigitais]
+DescontoDoEstabelecimentoSemAlterarPDVHabilitado=1
+
+[TabTraducao]
+NomeArqTraducao=Mens.txt
