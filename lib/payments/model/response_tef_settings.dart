@@ -1,6 +1,3 @@
-import 'package:meta/meta.dart';
-
-@immutable
 class ResponseTefSettings {
   final int id;
   final String couponNumber;

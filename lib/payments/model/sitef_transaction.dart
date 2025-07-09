@@ -1,8 +1,5 @@
-import 'package:meta/meta.dart';
-
 import '../enum/sitef_modality.dart';
 
-@immutable
 class SitefTransactionClisitef {
   final String dateFiscal;
   final String hourFiscal;
