@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:background="#fff">
+
+    <RelativeLayout
+        android:id="@+id/RelativeLayout01"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="#f0fff0"
+        android:paddingBottom="5dip"
+        android:paddingTop="5dip" >
+
+        <ImageView
+            android:id="@+id/imageView1"
+            android:layout_width="100dp"
+            android:layout_height="61dp"
+            android:layout_alignBottom="@+id/tvTitle"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            android:src="@drawable/ic_logo" android:contentDescription="@string/imgLogo"/>
+        
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:layout_marginRight="5dip"
+            android:layout_toRightOf="@+id/imageView1"
+            android:background="#0014F3FF"
+            android:gravity="center_horizontal"
+            android:padding="10dip"
+            android:shadowColor="#000"
+            android:shadowDx="-1"
+            android:shadowDy="1"
+            android:shadowRadius="1"
+            android:text="@string/tvConfigure"
+            android:textColor="#ffffffff"
+            android:textSize="@dimen/font_size" android:textStyle="bold"/>
+    </RelativeLayout>
+        <TextView
+            android:id="@+id/textView1"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" android:background="#80A080" android:height="1dp"/>
+    
+    <LinearLayout
+        android:id="@+id/linearLayout1"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" android:paddingTop="10dp">
+
+        <TextView
+            android:id="@+id/lbIP"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right|center_vertical"
+            android:gravity="right"
+            android:paddingRight="5dp"
+            android:text="@string/lbSiTefIP"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:textColor="#000" />
+
+        <EditText
+            android:id="@+id/edCfgIP"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="20dp"
+            android:layout_weight="1"
+            android:textColor="#000">
+
+        <requestFocus />
+            </EditText>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/linearLayout2"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" >
+        
+        <TextView
+            android:id="@+id/lbEmpresa"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="left|center_vertical"
+            android:gravity="right"
+            android:paddingRight="5dp"
+            android:text="@string/lbStoreId"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:textColor="#000" />
+
+        <EditText
+            android:id="@+id/edCfgEmpresa"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="20dp"
+            android:layout_weight="1"
+            android:inputType="text"
+            android:textColor="#000"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/linearLayout3"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/lbTerminal"
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right|center_vertical"
+            android:gravity="right"
+            android:paddingRight="5dp"
+            android:text="@string/lbTerminalId"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:textColor="#000" />
+
+        <EditText
+            android:id="@+id/edCfgTerminal"
+            android:layout_width="0dip"
+            android:layout_height="wrap_content"
+            android:layout_marginRight="20dp"
+            android:layout_weight="1"
+            android:inputType="text"
+            android:textColor="#000"/>
+
+    </LinearLayout>
+
+    <RelativeLayout
+        android:id="@+id/relativeLayout1"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" android:paddingTop="20dp">
+        
+        <Button
+            android:id="@+id/btCfgConfigura"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentTop="true"
+            android:layout_marginLeft="20dp"
+            android:text="@string/btCfgConfigure"
+            android:textSize="@dimen/btTextSize"
+            android:width="120dp" />
+        <Button
+            android:id="@+id/btCfgCancela"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginRight="20dp"
+            android:text="@string/btCfgCancel"
+            android:textSize="@dimen/btTextSize"
+            android:width="120dp" />
+
+    </RelativeLayout>
+
+</LinearLayout>
