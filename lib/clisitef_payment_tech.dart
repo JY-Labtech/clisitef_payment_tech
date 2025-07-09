@@ -1,3 +1,5 @@
+import 'package:clisitef_payment_tech/licence/licence_service.dart';
+
 import 'payments/payment.dart';
 
 // export 'payments/payment.dart';
@@ -12,27 +14,35 @@ import 'payments/payment.dart';
 
 class ClisitefTech {
   Payment? _payment;
+  ClisitefTech._();
 
   static ClisitefTech? _instance;
 
-//GET instance from ClisitefTech
   static ClisitefTech instance() {
-    _instance ??= ClisitefTech();
+    _instance ??= ClisitefTech._();
     return _instance!;
   }
 
-// Function to init payment and register handler from notify
-  // Payment initPayment(IClisitefHandler handler) {
-  //   _payment ??= Payment(iClisitefHandler: handler);
-  //   return _payment!;
-  // }
-
-  Payment initPayment() {
-    _payment ??= Payment();
-    return _payment!;
+  Future<Payment> initPayment({
+    required String licenceKey,
+  }) async {
+    try {
+      final result = await LicenceService().checkLicence(licenceKey: licenceKey);
+      if (!result) {
+        throw Exception('Invalid licence key. Please check your licence key.');
+      }
+      _payment ??= Payment();
+      return _payment!;
+    } catch (e) {
+      print('Error initializing payment: $e');
+      rethrow;
+    }
   }
 
   Payment get payment {
-    return _payment ?? initPayment();
+    if (_payment == null) {
+      throw Exception('Payment not initialized. Call initPayment() first.');
+    }
+    return _payment!;
   }
 }
