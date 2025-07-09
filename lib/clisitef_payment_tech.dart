@@ -1,37 +1,29 @@
 import 'package:clisitef_payment_tech/licence/licence_service.dart';
-
 import 'payments/payment.dart';
 
-// export 'payments/payment.dart';
-// export 'payments/enum/sitef_modality.dart';
-// export 'payments/helper/tef_helper.dart';
-// export 'payments/model/json/tef_transaction_model.dart';
-// export 'payments/model/params/msitef_params.dart';
-// export 'payments/model/sitef_settings.dart';
-// export 'payments/model/sitef_transaction.dart';
-// export 'payments/model/tef_transaction_response.dart';
-// export 'payments/model/params/msitef_type.dart';
-
 class ClisitefTech {
+  // Instância única (singleton)
+  static final ClisitefTech _instance = ClisitefTech._internal();
+
+  // Getter para acesso externo
+  static ClisitefTech get instance => _instance;
+
   Payment? _payment;
-  ClisitefTech._();
 
-  static ClisitefTech? _instance;
+  // Construtor privado
+  ClisitefTech._internal();
 
-  static ClisitefTech instance() {
-    _instance ??= ClisitefTech._();
-    return _instance!;
-  }
-
+  /// Inicializa o pagamento e valida a licença
   Future<Payment> initPayment({
     required String licenceKey,
   }) async {
     try {
-      final result = await LicenceService().checkLicence(licenceKey: licenceKey);
-      if (!result) {
+      final isValid = await LicenceService().checkLicence(licenceKey: licenceKey);
+      if (!isValid) {
         throw Exception('Invalid licence key. Please check your licence key.');
       }
-      _payment ??= Payment();
+
+      _payment = Payment();
       return _payment!;
     } catch (e) {
       print('Error initializing payment: $e');
@@ -39,10 +31,15 @@ class ClisitefTech {
     }
   }
 
+  /// Acesso ao pagamento já inicializado
   Payment get payment {
-    if (_payment == null) {
-      throw Exception('Payment not initialized. Call initPayment() first.');
+    if (!_isPaymentInitialized) {
+      throw Exception(
+        'Payment not initialized. Call initPayment() before accessing payment.',
+      );
     }
     return _payment!;
   }
+
+  bool get _isPaymentInitialized => _payment != null;
 }
