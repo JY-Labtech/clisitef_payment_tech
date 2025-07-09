@@ -59,6 +59,12 @@ O nome do arquivo deve ser `clisitef.jar` para que o plugin reconheça e saiba f
 
 ## :checkered_flag: Starting
 
+Inicialmente para liberar o uso do plugin, é necessário chamar o método `initPayment`, responsável por validar o código de licença fornecido e inicializar o SDK.
+
+```dart
+ClisitefTech.instance().initPayment(licenceKey: 'jiay672890okje');
+```
+
 Para utilizar o plugin, basta chamar alguma de suas funções abaixo:
 
 Através da função abaixo você irá realizar o setup do SDK conforme documentação da Fiserv. Passe como parâmetro as credencias.
