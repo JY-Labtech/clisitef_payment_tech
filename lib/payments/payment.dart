@@ -15,17 +15,7 @@ import 'model/tef_transaction_response.dart';
 const CHANNEL_NAME = "clisitef_payment_tech";
 
 class Payment {
-  // final IClisitefHandler iClisitefHandler;
-
   final channel = const MethodChannel(CHANNEL_NAME);
-
-  // Payment({
-  // }) {
-  //   // channel.setMethodCallHandler((e) => IClisitefHelper.callHandler(
-  //   //       call: e,
-  //   //       iClisitefHandler: iClisitefHandler,
-  //   //     ));
-  // }
 
   final Map<SitefModalityClisitef, String> _modalityMap = {
     SitefModalityClisitef.undefined: '0',
