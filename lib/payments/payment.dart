@@ -1,7 +1,11 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
+// ignore_for_file: constant_identifier_names, public_member_api_docs, sort_constructors_first
+
 import 'dart:convert';
 
+import 'package:check_licence_tech/check_licence_tech.dart';
 import 'package:flutter/services.dart';
+
+import 'package:clisitef_payment_tech/licence/constants/licence_constants.dart';
 
 import 'enum/sitef_modality.dart';
 import 'helper/tef_helper.dart';
@@ -10,12 +14,47 @@ import 'model/sitef_settings.dart';
 import 'model/sitef_transaction.dart';
 import 'model/tef_transaction_response.dart';
 
-//Fixed channel name
-// ignore: constant_identifier_names
 const CHANNEL_NAME = "clisitef_payment_tech";
 
-class Payment {
-  final channel = const MethodChannel(CHANNEL_NAME);
+final class Payment {
+  final MethodChannel channel;
+  final String licenceKey;
+
+  bool _isValidLicence = false;
+  final CheckLicenceTech _licence = CheckLicenceTech.instance();
+
+  Payment._({
+    required this.channel,
+    required this.licenceKey,
+  });
+
+  static Future<Payment> create({
+    required MethodChannel channel,
+    required String licenceKey,
+  }) async {
+    final payment = Payment._(
+      channel: channel,
+      licenceKey: licenceKey,
+    );
+
+    final valid = await payment._checkLicence();
+    if (!valid) {
+      throw Exception('Invalid licence key. Please check your licence key.');
+    }
+    payment._isValidLicence = true;
+    return payment;
+  }
+
+  Future<bool> _checkLicence() async {
+    if (licenceKey.isEmpty) return false;
+    return await _licence.checkLicence(licenceKey, url: licenceCheck);
+  }
+
+  void _ensureLicence() {
+    if (!_isValidLicence) {
+      throw Exception('Invalid licence key. Please check your licence key.');
+    }
+  }
 
   final Map<SitefModalityClisitef, String> _modalityMap = {
     SitefModalityClisitef.undefined: '0',
@@ -64,7 +103,6 @@ class Payment {
       returnValue: model.returnValue ?? '',
       paymentAmount: model.paymentAmount ?? '',
       codCancellationMode: model.codCancellationMode ?? '',
-      //resultCode: model.resultCode ?? 0,
       resultCode: resultCode ?? 999999,
       compDadosConf: model.compDadosConf ?? '',
       codTrans: model.codTrans ?? '',
@@ -81,36 +119,16 @@ class Payment {
   Future<int> configureClisitef({
     required SitefSettingsClisitef sitefSettings,
   }) async {
-    int aux = 0;
-    Map<String, dynamic> lineConfigureTef({
-      String? ipSitef,
-      String? storeId,
-      String? terminalId,
-      String? paramsAdd,
-    }) {
-      return {
-        'ipSitef': ipSitef,
-        'storeId': storeId,
-        'terminalId': terminalId,
-        'parametrosAdc': paramsAdd,
-      };
-    }
-
-    final params = lineConfigureTef(
-      ipSitef: sitefSettings.serverIp,
-      storeId: sitefSettings.storeCode,
-      terminalId: sitefSettings.posNumber,
-      paramsAdd: sitefSettings.additionalParameters,
-    );
-
+    _ensureLicence();
+    Map<String, dynamic> params = {
+      'ipSitef': sitefSettings.serverIp,
+      'storeId': sitefSettings.storeCode,
+      'terminalId': sitefSettings.posNumber,
+      'parametrosAdc': sitefSettings.additionalParameters,
+    };
     try {
-      final int response = await channel.invokeMethod(
-        'configureTef',
-        params,
-      );
-
-      aux = response;
-      return aux;
+      final int response = await channel.invokeMethod('configureTef', params);
+      return response;
     } catch (e) {
       rethrow;
     }
@@ -120,87 +138,42 @@ class Payment {
     required SitefSettingsClisitef sitefSettings,
     required SitefTransactionClisitef sitefTransaction,
   }) async {
+    _ensureLicence();
+    final modality = int.tryParse(_modalityMap[sitefTransaction.sitefModality] ?? '0') ?? 0;
+
+    String restrictions = '';
+    if (modality == 3 || modality == 2) {
+      restrictions = sitefSettings.enabledTransactions;
+    }
+
+    Map<String, dynamic> paramsTransaction = {
+      'modalidade': modality,
+      'valor': sitefTransaction.valuePayment,
+      'cupomFiscal': sitefTransaction.couponNumber,
+      'dataFiscal': sitefTransaction.dateFiscal,
+      'horario': sitefTransaction.hourFiscal,
+      'operador': sitefTransaction.operatorPos,
+      'restricoes': restrictions,
+      'ipSitef': sitefSettings.serverIp,
+      'storeId': sitefSettings.storeCode,
+      'terminalId': sitefSettings.posNumber,
+      'parametrosAdc': sitefSettings.additionalParameters,
+    };
+
     try {
-      Map<String, dynamic> lineToMethodChannel({
-        int? modalidade,
-        String? value,
-        String? couponNumber,
-        String? dateFiscal,
-        String? hourFiscal,
-        String? operador,
-        String? params,
-        String? ipSitef,
-        String? storeId,
-        String? terminalId,
-        String? paramsAdd,
-      }) {
-        return {
-          'modalidade': modalidade,
-          'valor': value,
-          'cupomFiscal': couponNumber,
-          'dataFiscal': dateFiscal,
-          'horario': hourFiscal,
-          'operador': operador,
-          'restricoes': params,
-          'ipSitef': ipSitef,
-          'storeId': storeId,
-          'terminalId': terminalId,
-          'parametrosAdc': paramsAdd,
-        };
-      }
-
-      final modality = int.tryParse(_modalityMap[sitefTransaction.sitefModality] ?? '0') ?? 0;
-
-      String restrictions = '';
-
-      switch (modality) {
-        case 3:
-          restrictions = sitefSettings.enabledTransactions;
-          break;
-        case 2:
-          restrictions = sitefSettings.enabledTransactions;
-          break;
-        default:
-          restrictions = '';
-      }
-
-      final paramsTransaction = lineToMethodChannel(
-        modalidade: modality,
-        value: sitefTransaction.valuePayment,
-        couponNumber: sitefTransaction.couponNumber,
-        dateFiscal: sitefTransaction.dateFiscal,
-        hourFiscal: sitefTransaction.hourFiscal,
-        operador: sitefTransaction.operatorPos,
-        params: restrictions,
-        ipSitef: sitefSettings.serverIp,
-        storeId: sitefSettings.storeCode,
-        terminalId: sitefSettings.posNumber,
-        paramsAdd: sitefSettings.additionalParameters,
-      );
-
-      String resultTransaction = await channel.invokeMethod(
-        'startTransaction',
-        paramsTransaction,
-      );
-
+      String resultTransaction = await channel.invokeMethod('startTransaction', paramsTransaction);
       final resultJson = json.decode(resultTransaction);
-
       final model = TefTransactionModel.fromJson(resultJson);
 
       if (model.resultCode != 0 || model.tefNSUAuthorizing == '') {
-        final resultCode = model.resultCode;
-
-        if (resultCode == -1) {
+        if (model.resultCode == -1) {
           final configure = await configureClisitef(sitefSettings: sitefSettings);
           if (configure != 0) {
             return await clisitefTransaction(sitefSettings: sitefSettings, sitefTransaction: sitefTransaction);
           }
         }
       }
-
-      return _fetchTefTransactionResponse(
-        model: model,
-      );
+      return _fetchTefTransactionResponse(model: model);
     } catch (e) {
       rethrow;
     }
