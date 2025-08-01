@@ -49,6 +49,8 @@ Para que o plugin funcione corretamente é necessário ter cadastro no Fiserv e 
 
 #### ⚠️ Atenção! ⚠️
 
+### ⚠️⚠️⚠️ Esse plugin não funciona com PROXY!!! ⚠️⚠️⚠️
+
 Necessário colocar a lib .jar no diretório abaixo:
 
 ```
