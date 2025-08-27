@@ -6,7 +6,7 @@ class ClisitefTech {
   ClisitefTech._internal();
   static ClisitefTech? _instance;
 
-  static ClisitefTech get instance {
+  static ClisitefTech get I {
     _instance ??= ClisitefTech._internal();
     return _instance!;
   }
@@ -16,6 +16,8 @@ class ClisitefTech {
   final _licence = CheckLicenceTech.instance();
 
   Future<String> getSerialNumber() async => await _licence.getSerialNumber();
+
+  Future<bool> wipeLicenceCache() async => await _licence.wipeLicence();
 
   Future<Payment> initPayment({required String licenceKey}) async {
     if (_payment != null) {
