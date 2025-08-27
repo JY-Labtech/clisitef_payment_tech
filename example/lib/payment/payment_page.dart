@@ -18,7 +18,7 @@ class _PaymentPageState extends State<PaymentPage> {
 
   @override
   void initState() {
-    //ClisitefTech.instance().initPayment();
+    //ClisitefTech.I.initPayment();
     super.initState();
   }
 
@@ -59,7 +59,7 @@ class _PaymentPageState extends State<PaymentPage> {
                   setState(() {
                     controller.clickPayment = true;
                   });
-                  // ClisitefTech.instance().payment.debitPayment(6);
+                  // ClisitefTech.I.payment.debitPayment(6);
                 },
               ),
               ElevatedButton(
@@ -70,7 +70,7 @@ class _PaymentPageState extends State<PaymentPage> {
                         setState(() {
                           controller.clickPayment = true;
                         });
-                        // ClisitefTech.instance().payment.creditPayment(controller.saleValue);
+                        // ClisitefTech.I.payment.creditPayment(controller.saleValue);
                       }
                     : null,
               ),
@@ -82,7 +82,7 @@ class _PaymentPageState extends State<PaymentPage> {
                         setState(() {
                           controller.clickPayment = true;
                         });
-                        // ClisitefTech.instance().payment.creditPaymentParc(
+                        // ClisitefTech.I.payment.creditPaymentParc(
                         //       value: controller.saleValue,
                         //       installment: 2,
                         //       withInterest: false,
@@ -98,7 +98,7 @@ class _PaymentPageState extends State<PaymentPage> {
                         setState(() {
                           controller.clickPayment = true;
                         });
-                        // ClisitefTech.instance().payment.voucherPayment(controller.saleValue);
+                        // ClisitefTech.I.payment.voucherPayment(controller.saleValue);
                       }
                     : null,
               ),
@@ -120,7 +120,7 @@ class _PaymentPageState extends State<PaymentPage> {
             onPressed: controller.clickPayment
                 ? () {
                     controller.setSaleValue(0.0);
-                    // ClisitefTech.instance().payment.abortTransaction();
+                    // ClisitefTech.I.payment.abortTransaction();
                   }
                 : null,
             child: const Text("Cancelar Operação"),
@@ -130,7 +130,7 @@ class _PaymentPageState extends State<PaymentPage> {
           ),
           ElevatedButton(
             onPressed: () {
-              // ClisitefTech.instance().payment.abortTransaction();
+              // ClisitefTech.I.payment.abortTransaction();
             },
             child: const Text("Abortar transação"),
           ),
@@ -139,7 +139,7 @@ class _PaymentPageState extends State<PaymentPage> {
           ),
           ElevatedButton(
             onPressed: () {
-              // ClisitefTech.instance().payment.cancelTransaction(
+              // ClisitefTech.I.payment.cancelTransaction(
               //       amount: controller.saleValue,
               //       transactionType: PaymentTypeTransaction.CREDIT,
               //     );

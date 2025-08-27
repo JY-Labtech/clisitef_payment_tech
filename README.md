@@ -64,7 +64,7 @@ O nome do arquivo deve ser `clisitef.jar` para que o plugin reconheça e saiba f
 Inicialmente para liberar o uso do plugin, é necessário chamar o método `initPayment`, responsável por validar o código de licença fornecido e inicializar o SDK.
 
 ```dart
-ClisitefTech.instance().initPayment(licenceKey: '***REMOVIDO***');
+ClisitefTech.I.initPayment(licenceKey: '***REMOVIDO***');
 ```
 
 Para utilizar o plugin, basta chamar alguma de suas funções abaixo:
@@ -72,14 +72,14 @@ Para utilizar o plugin, basta chamar alguma de suas funções abaixo:
 Através da função abaixo você irá realizar o setup do SDK conforme documentação da Fiserv. Passe como parâmetro as credencias.
 
 ```dart
-ClisitefTech.instance().payment.configureClisitef(SitefSettingsClisitef())
+ClisitefTech.I.payment.configureClisitef(SitefSettingsClisitef())
 ```
 
 Transação:
 Utilize a função abaixo para chamar um método de pagamento, passando os devidos parâmetros solicitados.
 
 ```dart
-ClisitefTech.instance().payment.clisitefTransaction({
+ClisitefTech.I.payment.clisitefTransaction({
     required SitefSettingsClisitef sitefSettings,
     required SitefTransactionClisitef sitefTransaction,
   })
