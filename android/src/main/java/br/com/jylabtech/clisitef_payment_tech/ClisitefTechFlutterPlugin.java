@@ -104,12 +104,18 @@ public class ClisitefTechFlutterPlugin
   }
 
   @Override
-  public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
+  public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) throws Exception {
     _result = result;
-      checkClisitefTech();
-   if(clisitefTech != null) {
-       clisitefTech.initPayment(call, result);
-   }
+      try {
+          checkClisitefTech();
+          if(clisitefTech != null) {
+              clisitefTech.initPayment(call, result);
+          }
+      } catch (Exception e) {
+          Log.d("print", "*Erro onMethodCall: " + e.getMessage());
+          _result.success(e.getMessage());
+          throw new Exception(e.getMessage());
+      }
   }
   
   @Override
