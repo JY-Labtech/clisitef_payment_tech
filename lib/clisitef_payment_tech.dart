@@ -1,4 +1,3 @@
-import 'package:check_licence_tech/check_licence_tech.dart';
 import 'package:clisitef_payment_tech/licence/constants/licence_constants.dart';
 import 'package:clisitef_payment_tech/payments/payment.dart';
 
@@ -13,17 +12,11 @@ class ClisitefTech {
 
   Payment? _payment;
 
-  final _licence = CheckLicenceTech.instance();
-
-  Future<String> getSerialNumber() async => await _licence.getSerialNumber();
-
-  Future<bool> wipeLicenceCache() async => await _licence.wipeLicence();
-
-  Future<Payment> initPayment({required String licenceKey}) async {
+  Payment initPayment() {
     if (_payment != null) {
       return _payment!;
     }
-    _payment = await Payment.create(channel: channel, licenceKey: licenceKey);
+    _payment = Payment.create(channel: channel);
     return _payment!;
   }
 

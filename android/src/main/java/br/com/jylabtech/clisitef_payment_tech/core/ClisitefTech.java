@@ -4,8 +4,10 @@ import android.content.Context;
 import android.util.Log;
 import android.app.Activity;
 
-
+import br.com.jylabtech.clisitef_payment_tech.BuildConfig;
 import br.com.jylabtech.clisitef_payment_tech.presenter.PaymentsPresenter;
+import br.com.jylabtech.clisitef_payment_tech.licence.CheckLicenceTech;
+import br.com.jylabtech.clisitef_payment_tech.licence.LicenceResult;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 
@@ -23,9 +25,17 @@ public class ClisitefTech {
         this.mActivity = activity;
     }
 
-    public void initPayment(MethodCall call, MethodChannel.Result result) {
+    public void initPayment(MethodCall call, MethodChannel.Result result) throws Exception {
         if (this.payment == null) {
             this.payment = new PaymentsPresenter(this.mActivity, this.currentContext);
+        }
+
+        String licenceKeyLocal = BuildConfig.LICENCE_KEY;
+        String licenceInternalKey = BuildConfig.LICENCE_INTERNAL_KEY;
+
+        LicenceResult licenceResult = checkValidLicence(licenceKeyLocal, licenceInternalKey);
+        if(licenceResult.getResult() != 0) {
+            throw new Exception(licenceResult.getErrorMessage());
         }
 
         if (call.method.startsWith("configureTef")) {
@@ -43,5 +53,10 @@ public class ClisitefTech {
     } else {
       result.notImplemented();
     }
+    }
+
+    private LicenceResult checkValidLicence(String licenceKey, String licenceInternalKey) {
+        LicenceResult resultLicence =  licenceTech.validateLicence(licenceKey, licenceInternalKey);
+        return resultLicence;
     }
 }
