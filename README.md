@@ -34,14 +34,7 @@ Plugin Flutter para facilitar integração com o TEF da `Clisitef`.
 Para adquirir uma licença, cadastre-se no site [Licença JY Labtech](https://licenca.jylabtech.com.br).  
 Cada licença é válida por terminal. Após a compra, será gerada uma chave `licenceKey` vinculada ao terminal.
 
-##### Obervação: A partir da versão 1.0.0 não é mais necessário passar o `licenceKey` como parâmetro.
-
-A partir da versão 2.0.0 é necessário adicionar as chaves no seu arquivo `local.properties` na raiz da pasta `android`.
-
-```
-licenceKey=<sua_licenca>
-licenceInternalKey=***REMOVIDO***
-```
+##### Observação: A partir da versão 2.0.0 as chaves `licenceKey` e `licenceInternalKey` devem ser fornecidas diretamente pelo código Dart ao chamar `ClisitefTech.I.initPayment`.
 
 ## :sparkles: Funcionalidades
 
@@ -61,24 +54,17 @@ licenceInternalKey=***REMOVIDO***
 
 Para que o plugin funcione corretamente é necessário ter cadastro no Fiserv e suas credenciais de acesso.
 
-#### ⚠️ Atenção! ⚠️
-
 ### ⚠️⚠️⚠️ Esse plugin não funciona com PROXY!!! ⚠️⚠️⚠️
-
-Necessário colocar a lib .jar no diretório abaixo:
-
-```
-android/libs/clisitef.jar
-```
-
-O nome do arquivo deve ser `clisitef.jar` para que o plugin reconheça e saiba fazer a importação corretamente.
 
 ## :checkered_flag: Starting
 
-Inicialmente para liberar o uso do plugin, é necessário chamar o método `initPayment`, responsável por validar o código de licença fornecido e inicializar o SDK.
+Inicialmente para liberar o uso do plugin, é necessário chamar o método `initPayment`, responsável por validar as chaves de licença e inicializar o SDK. A chamada agora é assíncrona:
 
 ```dart
-ClisitefTech.I.initPayment(licenceKey: '***REMOVIDO***');
+await ClisitefTech.I.initPayment(
+  licenceKey: 'sua_licenca_publica',
+  licenceInternalKey: 'sua_licenca_interna',
+);
 ```
 
 Para utilizar o plugin, basta chamar alguma de suas funções abaixo:

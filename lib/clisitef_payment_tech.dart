@@ -12,17 +12,22 @@ class ClisitefTech {
 
   Payment? _payment;
 
-  Payment initPayment() {
-    if (_payment != null) {
-      return _payment!;
-    }
-    _payment = Payment.create(channel: channel);
-    return _payment!;
+  Future<Payment> initPayment({
+    required String licenceKey,
+    required String licenceInternalKey,
+  }) async {
+    final paymentInstance = Payment.create(channel: channel);
+    await paymentInstance.ensureInitialized(
+      licenceKey: licenceKey,
+      licenceInternalKey: licenceInternalKey,
+    );
+    _payment = paymentInstance;
+    return paymentInstance;
   }
 
   Payment get payment {
     if (_payment == null) {
-      throw Exception('Payment não autorizado. Licença inválida.');
+      throw Exception('Payment não autorizado. Chame initPayment com as chaves de licença válidas.');
     }
     return _payment!;
   }

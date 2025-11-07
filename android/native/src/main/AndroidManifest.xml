@@ -1,0 +1,33 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    
+    <uses-permission android:name="android.permission.USB_PERMISSION" />
+    <uses-permission android:name="android.permission.NFC"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.SET_TIME" tools:ignore="ProtectedPermissions" />
+
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
+    <uses-feature android:name="android.hardware.usb.host" android:required="true" />
+    <uses-feature android:name="android.hardware.nfc"/>
+
+    <application
+        android:label="Your Plugin"
+        android:icon="@mipmap/ic_launcher">
+        <!-- Declare any specific activities or services if needed -->
+        <activity android:name="br.com.jylabtech.clisitef_payment_tech.ConfigureActivity"></activity>
+        <activity android:name="br.com.jylabtech.clisitef_payment_tech.DialogActivity" android:theme="@android:style/Theme.Dialog"></activity>
+        <activity android:name="br.com.jylabtech.clisitef_payment_tech.MenuActivity" android:theme="@android:style/Theme.Dialog"></activity>
+        <activity android:name="br.com.jylabtech.clisitef_payment_tech.YesNoActivity" android:theme="@android:style/Theme.Dialog"></activity>
+        <activity android:name="br.com.jylabtech.clisitef_payment_tech.MessageActivity" android:theme="@android:style/Theme.Dialog"></activity>
+        <activity android:name="br.com.jylabtech.clisitef_payment_tech.TransactionActivity"></activity>
+        <activity android:name="br.com.jylabtech.clisitef_payment_tech.MyActivityQRCode"></activity>
+
+    </application>
+
+</manifest>
