@@ -18,8 +18,17 @@ class _PaymentPageState extends State<PaymentPage> {
 
   @override
   void initState() {
-    //ClisitefTech.I.initPayment();
     super.initState();
+    Future.microtask(() async {
+      try {
+        await ClisitefTech.I.initPayment(
+          licenceKey: '<SUA_LICENCA>',
+          licenceInternalKey: '<SUA_LICENCA_INTERNA>',
+        );
+      } catch (error) {
+        debugPrint('Falha ao inicializar o Clisitef: $error');
+      }
+    });
   }
 
   @override

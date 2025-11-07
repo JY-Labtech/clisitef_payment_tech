@@ -16,8 +16,12 @@ const CHANNEL_NAME = "clisitef_payment_tech";
 final class Payment {
   final MethodChannel channel;
 
-  // Cache da instância criada
   static Payment? _instance;
+
+  bool _licenceValidated = false;
+  String? _lastLicenceKey;
+  String? _lastLicenceInternalKey;
+  Future<void>? _initializing;
 
   Payment._({
     required this.channel,
@@ -26,17 +30,68 @@ final class Payment {
   static Payment create({
     required MethodChannel channel,
   }) {
-    // Se já existe instância e licença validada, retorna ela diretamente
     if (_instance != null) {
       return _instance!;
     }
 
-    final payment = Payment._(
-      channel: channel,
-    );
-
+    final payment = Payment._(channel: channel);
     _instance = payment;
     return payment;
+  }
+
+  Future<void> ensureInitialized({
+    required String licenceKey,
+    required String licenceInternalKey,
+  }) async {
+    if (_licenceValidated &&
+        _lastLicenceKey == licenceKey &&
+        _lastLicenceInternalKey == licenceInternalKey) {
+      return;
+    }
+
+    if (_initializing != null) {
+      await _initializing;
+      if (_licenceValidated &&
+          _lastLicenceKey == licenceKey &&
+          _lastLicenceInternalKey == licenceInternalKey) {
+        return;
+      }
+    }
+
+    _initializing = _initializeLicence(
+      licenceKey: licenceKey,
+      licenceInternalKey: licenceInternalKey,
+    );
+
+    try {
+      await _initializing;
+      _licenceValidated = true;
+      _lastLicenceKey = licenceKey;
+      _lastLicenceInternalKey = licenceInternalKey;
+    } finally {
+      _initializing = null;
+    }
+  }
+
+  Future<void> _initializeLicence({
+    required String licenceKey,
+    required String licenceInternalKey,
+  }) async {
+    final bool success = await channel.invokeMethod<bool>(
+          'initialize',
+          {
+            'licenceKey': licenceKey,
+            'licenceInternalKey': licenceInternalKey,
+          },
+        ) ??
+        false;
+
+    if (!success) {
+      throw PlatformException(
+        code: 'LICENCE_ERROR',
+        message: 'Falha ao validar licença no dispositivo.',
+      );
+    }
   }
 
   final Map<SitefModalityClisitef, String> _modalityMap = {
@@ -102,6 +157,12 @@ final class Payment {
   Future<int> configureClisitef({
     required SitefSettingsClisitef sitefSettings,
   }) async {
+    if (!_licenceValidated) {
+      throw PlatformException(
+        code: 'LICENCE_NOT_INITIALIZED',
+        message: 'Chame ClisitefTech.I.initPayment antes de configurar o TEF.',
+      );
+    }
     Map<String, dynamic> params = {
       'ipSitef': sitefSettings.serverIp,
       'storeId': sitefSettings.storeCode,
@@ -120,6 +181,12 @@ final class Payment {
     required SitefSettingsClisitef sitefSettings,
     required SitefTransactionClisitef sitefTransaction,
   }) async {
+    if (!_licenceValidated) {
+      throw PlatformException(
+        code: 'LICENCE_NOT_INITIALIZED',
+        message: 'Chame ClisitefTech.I.initPayment antes de iniciar transações.',
+      );
+    }
     final modality = int.tryParse(_modalityMap[sitefTransaction.sitefModality] ?? '0') ?? 0;
 
     String restrictions = '';

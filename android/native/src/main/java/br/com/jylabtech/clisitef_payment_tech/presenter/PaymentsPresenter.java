@@ -6,10 +6,6 @@ import android.content.Context;
 import br.com.jylabtech.clisitef_payment_tech.usecase.ClisitefUsecase;
 import br.com.jylabtech.clisitef_payment_tech.usecase.MSitefUsecase;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodCall;
 
 public class PaymentsPresenter {
@@ -24,6 +20,14 @@ public class PaymentsPresenter {
         this.mSitefUsecase = new MSitefUsecase();
         this.mActivity = activity;
         this.mContext = context;
+    }
+
+    public void updateActivity(Activity activity) {
+        this.mActivity = activity;
+    }
+
+    public void dispose() {
+        this.mActivity = null;
     }
 
    public int configureTef(MethodCall call) {
