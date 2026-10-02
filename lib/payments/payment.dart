@@ -2,7 +2,10 @@
 
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+
+import '../licence/constants/licence_constants.dart' show licenceCheck;
 
 import 'enum/sitef_modality.dart';
 import 'helper/tef_helper.dart';
@@ -39,9 +42,15 @@ final class Payment {
     return payment;
   }
 
+  /// Limpa a instância compartilhada e o estado da licença (uso em testes).
+  @visibleForTesting
+  static void resetForTesting() {
+    _instance = null;
+  }
+
   Future<void> ensureInitialized({
     required String licenceKey,
-    required String licenceInternalKey,
+    String licenceInternalKey = licenceCheck,
   }) async {
     if (_licenceValidated &&
         _lastLicenceKey == licenceKey &&
@@ -63,6 +72,7 @@ final class Payment {
       licenceInternalKey: licenceInternalKey,
     );
 
+    _licenceValidated = false;
     try {
       await _initializing;
       _licenceValidated = true;

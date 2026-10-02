@@ -4,7 +4,8 @@ package br.com.jylabtech.clisitef_payment_tech.licence;
 public class LicenceResult {
     private String method;
     private String errorMessage;
-    private int result;
+    // Começa como erro: só vira sucesso (0) quando a licença for validada.
+    private int result = 999999;
     private String message;
 
     private CheckLicenceEntity licenceEntity;

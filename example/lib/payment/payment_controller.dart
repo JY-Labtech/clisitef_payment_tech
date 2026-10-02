@@ -20,15 +20,12 @@ class PaymentController extends IClisitefHandler {
     }
   }
 
-  @override
   void disposeDialog() {
     //BotToast.cleanAll();
   }
 
-  @override
   void onAbortedSuccessfully() {}
 
-  @override
   void onActivationDialog() {}
 
   @override
@@ -51,10 +48,8 @@ class PaymentController extends IClisitefHandler {
     print('***onFinishedResponse: $message');
   }
 
-  @override
   void onTransactionSuccess() {}
 
-  @override
   void writeToFile({
     String? transactionCode,
     String? transactionId,
@@ -64,7 +59,6 @@ class PaymentController extends IClisitefHandler {
   @override
   void onLoading(bool show) {}
 
-  @override
   void onTransactionInfo({
     String? transactionCode,
     String? transactionId,

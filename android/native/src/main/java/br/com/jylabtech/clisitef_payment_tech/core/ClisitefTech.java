@@ -8,6 +8,7 @@ import androidx.annotation.Nullable;
 
 import br.com.jylabtech.clisitef_payment_tech.licence.CheckLicenceTech;
 import br.com.jylabtech.clisitef_payment_tech.licence.LicenceResult;
+import br.com.jylabtech.clisitef_payment_tech.licence.LicenceRules;
 import br.com.jylabtech.clisitef_payment_tech.presenter.PaymentsPresenter;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
@@ -29,14 +30,30 @@ public final class ClisitefTech {
         this.licenceTech = new CheckLicenceTech(context);
     }
 
+    /** Métodos de negócio que exigem licença válida antes de chamar o SDK. */
+    public static boolean isLicensedMethod(@NonNull String method) {
+        return method.startsWith("configureTef")
+                || method.startsWith("startTransaction")
+                || method.startsWith("transactionMsitef")
+                || method.startsWith("menuMSitef");
+    }
+
+    /**
+     * Executa o método de negócio. Deve ser chamado na main thread e somente depois
+     * de {@link #validateLicence()} retornar sucesso (o gate fica no plugin, que
+     * valida em background antes de chegar aqui).
+     */
     public void handleMethodCall(@NonNull MethodCall call,
                                  @NonNull MethodChannel.Result result) throws Exception {
         ensurePresenter();
 
-        LicenceResult licenceResult = validateLicence();
-        if (licenceResult == null || licenceResult.getResult() != 0) {
-            String errorMessage = licenceResult != null ? licenceResult.getErrorMessage() : "Licença inválida.";
-            throw new Exception(errorMessage);
+        if (paymentPresenter == null) {
+            result.error(
+                    "NO_ACTIVITY",
+                    "Plugin não está associado a uma Activity. Aguarde onAttachedToActivity.",
+                    null
+            );
+            return;
         }
 
         if (call.method.startsWith("configureTef")) {
@@ -58,20 +75,13 @@ public final class ClisitefTech {
         this.licenceInternalKey = licenceInternalKey != null ? licenceInternalKey : "";
     }
 
+    /**
+     * Valida a licença (cache válido ou servidor oficial). Faz I/O: chame fora da main thread.
+     * Um {@code licenceInternalKey} vazio usa a URL padrão do core.
+     */
     public LicenceResult validateLicence() {
-        LicenceResult licenceResult = new LicenceResult();
-        licenceResult.setMethod("licence");
-
         if (licenceKey == null || licenceKey.trim().isEmpty()) {
-            licenceResult.setResult(999999);
-            licenceResult.setErrorMessage("licenceKey não informado.");
-            return licenceResult;
-        }
-
-        if (licenceInternalKey == null || licenceInternalKey.trim().isEmpty()) {
-            licenceResult.setResult(999999);
-            licenceResult.setErrorMessage("licenceInternalKey não informado.");
-            return licenceResult;
+            return LicenceRules.error("Licença não configurada. Chame ClisitefTech.I.initPayment com o licenceKey.");
         }
 
         return licenceTech.validateLicence(licenceKey, licenceInternalKey);

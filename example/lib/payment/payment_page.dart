@@ -23,7 +23,8 @@ class _PaymentPageState extends State<PaymentPage> {
       try {
         await ClisitefTech.I.initPayment(
           licenceKey: '<SUA_LICENCA>',
-          licenceInternalKey: '<SUA_LICENCA_INTERNA>',
+          // https://licence-server.invalid/pos-payments/licence/check em base64
+          licenceInternalKey: '***REMOVIDO***',
         );
       } catch (error) {
         debugPrint('Falha ao inicializar o Clisitef: $error');
