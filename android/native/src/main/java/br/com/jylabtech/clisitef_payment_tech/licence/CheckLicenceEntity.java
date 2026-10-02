@@ -4,6 +4,7 @@ import org.json.JSONObject;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.TimeZone;
 
 public class CheckLicenceEntity {
     private String id;
@@ -22,6 +23,7 @@ public class CheckLicenceEntity {
     private Date expiredAt;
     private boolean isExpired;
     private boolean isInactive;
+    private boolean isCanceled;
     private boolean isTrial;
     private String subscriptionId;
     private String checkoutType;
@@ -92,6 +94,9 @@ public class CheckLicenceEntity {
     public boolean isInactive() { return isInactive; }
     public void setInactive(boolean inactive) { isInactive = inactive; }
 
+    public boolean isCanceled() { return isCanceled; }
+    public void setCanceled(boolean canceled) { isCanceled = canceled; }
+
     public boolean isTrial() { return isTrial; }
     public void setTrial(boolean trial) { isTrial = trial; }
 
@@ -113,11 +118,40 @@ public class CheckLicenceEntity {
     public String getDatabaseVersion() { return databaseVersion; }
     public void setDatabaseVersion(String databaseVersion) { this.databaseVersion = databaseVersion; }
 
+    /**
+     * Formato das datas do servidor: yyyy-MM-dd'T'HH:mm:ss, horário de Brasília, sem fuso.
+     */
+    static SimpleDateFormat dateFormat() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
+        sdf.setTimeZone(TimeZone.getTimeZone("America/Sao_Paulo"));
+        sdf.setLenient(false);
+        return sdf;
+    }
+
+    private static String optNullableString(JSONObject json, String key) {
+        if (json.isNull(key)) {
+            return "";
+        }
+        return json.optString(key);
+    }
+
+    /** Data inválida vira null (nunca inventa validade). */
+    private static Date parseDate(SimpleDateFormat sdf, String value) {
+        if (value == null || value.isEmpty()) {
+            return null;
+        }
+        try {
+            return sdf.parse(value);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     // Construtor a partir de JSON
     public static CheckLicenceEntity fromJson(String jsonStr) {
         try {
             JSONObject json = new JSONObject(jsonStr);
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+            SimpleDateFormat sdf = dateFormat();
 
             CheckLicenceEntity entity = new CheckLicenceEntity();
             entity.setId(json.optString("id"));
@@ -135,25 +169,17 @@ public class CheckLicenceEntity {
             entity.setLicenceEncrypt(json.optString("licenceEncrypt"));
             entity.setExpired(json.optBoolean("isExpired"));
             entity.setInactive(json.optBoolean("isInactive"));
+            entity.setCanceled(json.optBoolean("isCanceled"));
             entity.setTrial(json.optBoolean("isTrial"));
             entity.setSubscriptionId(json.optString("subscriptionId"));
             entity.setCheckoutType(json.optString("checkoutType"));
             entity.setDatabaseVersion(json.optString("databaseVersion"));
             entity.setLicenceInternalKey(json.optString("licenceInternalKey"));
 
-            String expiredAtStr = json.optString("expiredAt");
-            if (!expiredAtStr.isEmpty()) entity.setExpiredAt(sdf.parse(expiredAtStr));
-
-            String createdAtStr = json.optString("createdAt");
-            if (!createdAtStr.isEmpty()) entity.setCreatedAt(sdf.parse(createdAtStr));
-
-            String updatedAtStr = json.optString("updatedAt");
-            if (!updatedAtStr.isEmpty()) entity.setUpdatedAt(sdf.parse(updatedAtStr));
-
-            String savedLocalStr = json.optString("savedLocalDatabaseAt");
-            if (!savedLocalStr.isEmpty()) entity.setSavedLocalDatabaseAt(sdf.parse(savedLocalStr));
-
-
+            entity.setExpiredAt(parseDate(sdf, optNullableString(json, "expiredAt")));
+            entity.setCreatedAt(parseDate(sdf, optNullableString(json, "createdAt")));
+            entity.setUpdatedAt(parseDate(sdf, optNullableString(json, "updatedAt")));
+            entity.setSavedLocalDatabaseAt(parseDate(sdf, optNullableString(json, "savedLocalDatabaseAt")));
 
             return entity;
         } catch (Exception e) {
@@ -181,13 +207,14 @@ public class CheckLicenceEntity {
             json.put("licenceEncrypt", licenceEncrypt);
             json.put("isExpired", isExpired);
             json.put("isInactive", isInactive);
+            json.put("isCanceled", isCanceled);
             json.put("isTrial", isTrial);
             json.put("subscriptionId", subscriptionId);
             json.put("checkoutType", checkoutType);
             json.put("databaseVersion", databaseVersion);
             json.put("licenceInternalKey", licenceInternalKey);
 
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+            SimpleDateFormat sdf = dateFormat();
             if (expiredAt != null) json.put("expiredAt", sdf.format(expiredAt));
             if (createdAt != null) json.put("createdAt", sdf.format(createdAt));
             if (updatedAt != null) json.put("updatedAt", sdf.format(updatedAt));

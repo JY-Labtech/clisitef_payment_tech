@@ -111,5 +111,7 @@ dependencies {
     compileOnly fileTree(dir: externalLibsDir, include: ['*.aar'])
 
     testImplementation 'junit:junit:4.13.2'
+    // org.json do android.jar é stub em teste JVM
+    testImplementation 'org.json:json:20240303'
 }
 

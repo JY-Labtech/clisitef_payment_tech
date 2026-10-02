@@ -23,7 +23,8 @@ class _PaymentPageState extends State<PaymentPage> {
       try {
         await ClisitefTech.I.initPayment(
           licenceKey: '<SUA_LICENCA>',
-          licenceInternalKey: '<SUA_LICENCA_INTERNA>',
+          // https://portal-api.jylabtech.com.br/pos-payments/licence/check em base64
+          licenceInternalKey: 'aHR0cHM6Ly9wb3J0YWwtYXBpLmp5bGFidGVjaC5jb20uYnIvcG9zLXBheW1lbnRzL2xpY2VuY2UvY2hlY2s=',
         );
       } catch (error) {
         debugPrint('Falha ao inicializar o Clisitef: $error');
