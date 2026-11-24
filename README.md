@@ -116,7 +116,7 @@ Adicione a dependência no `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  clisitef_payment_tech: ^3.1.0
+  clisitef_payment_tech: ^3.2.0
 ```
 
 Inicialmente para liberar o uso do plugin, é necessário chamar o método `initPayment`, responsável por validar as chaves de licença (veja [Licenciamento](#-licenciamento)) e inicializar o SDK. A chamada é assíncrona e deve ser aguardada antes de qualquer operação:

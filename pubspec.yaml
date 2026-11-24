@@ -1,6 +1,6 @@
 name: clisitef_payment_tech
 description: Plugin Flutter para integrar sua aplicação com o SDK Android da Clisitef para meios de pagamento.
-version: 3.1.0
+version: 3.2.0
 repository: https://github.com/JY-Labtech/clisitef_payment_tech
 
 environment:

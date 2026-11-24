@@ -1,10 +1,9 @@
-## Não lançado
+## 3.2.0
 
 - Licença conforme o contrato do jylabtech_core (JYN-234): o cache offline vale por no máximo 72 horas (antes 7 dias) e só é usado quando o servidor não responde (sem internet, timeout, 408/429, 5xx).
 - A primeira operação depois de abrir o app consulta o servidor, e a licença é revalidada a cada 4 horas de uso.
 - Recusa do servidor (cliente bloqueado, licença vencida/cancelada/suspensa, não encontrada, aparelho desativado) apaga o cache e bloqueia na hora.
 - O atalho só-cache `validateExistsLicence` só libera quando a validação também liberaria sem rede (já validada online nesta instância há menos de 4h, ou servidor fora do ar há menos de 5 min).
-- Os binários `android/libs/clisitef_payment_tech-native.jar` e `clisitef_payment_tech-release.aar` precisam ser regerados na publicação.
 
 ## 3.1.0
 
