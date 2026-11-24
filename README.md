@@ -62,7 +62,9 @@ O plugin sempre valida a licença no servidor oficial da JY Labtech. A URL fica 
 
 - Na chamada de `initPayment`, o plugin envia ao servidor a chave e a identificação do aparelho (ANDROID_ID, serial e modelo). O aparelho é vinculado à licença na primeira validação.
 - **Toda operação** (`configureClisitef`, `clisitefTransaction` e os métodos do m-SiTef) confere a licença no nativo antes de chamar o SDK. Não basta ter chamado `initPayment` uma vez: se a licença vencer, for suspensa ou cancelada, as operações seguintes falham.
-- Com a licença válida, o resultado fica salvo no aparelho de forma criptografada e o plugin funciona offline até o vencimento da licença, por no máximo **7 dias** sem nova consulta. Depois disso é preciso conexão com a internet para validar de novo. Um cache com data de gravação no futuro (relógio adulterado), de outra chave ou de outro servidor é descartado.
+- **Revalidação**: a primeira operação depois de abrir o app sempre consulta o servidor; depois, a licença é consultada de novo a cada **4 horas** de uso.
+- **Bloqueio imediato**: se o servidor recusar a licença (cliente bloqueado no portal, licença vencida, cancelada ou suspensa, não encontrada, aparelho desativado ou limite de aparelhos), o cache é apagado e as operações passam a falhar com `LICENCE_ERROR` na hora.
+- **Cache offline**: após uma validação bem-sucedida, o resultado fica salvo no aparelho de forma criptografada. Ele só é usado quando o servidor não responde (sem internet, timeout, 408/429 ou erro 5xx) e por no máximo **72 horas** desde a última validação online, desde que a licença continue dentro da validade. Depois de uma falha de rede o plugin espera 5 minutos antes de tentar o servidor de novo. Um cache com data de gravação no futuro (relógio adulterado), de outra chave ou de outro servidor é descartado. Sem internet e sem cache válido, as operações falham com `LICENCE_ERROR`.
 - O vencimento (`expiredAt`) já considera o período de tolerância em caso de atraso no pagamento.
 - A consulta ao servidor tem timeout de 15 segundos e roda fora da thread principal.
 
@@ -83,7 +85,7 @@ Um `licenceKey` vazio gera `PlatformException` com `code: 'INVALID_ARGUMENT'`.
 
 ### Troubleshooting
 
-- **Erro de conexão / timeout:** o aparelho precisa de acesso à internet (sem proxy) na primeira validação e, depois, ao menos a cada 7 dias.
+- **Erro de conexão / timeout:** o aparelho precisa de acesso à internet (sem proxy) ao abrir o app e, depois, ao menos a cada 72 horas (sem internet, a operação só funciona se houver uma validação bem-sucedida nas últimas 72 horas).
 - **404 com uma chave que funcionava:** confira se não houve erro ao copiar a chave.
 - **412 após trocar de aparelho:** desative o aparelho antigo no portal para liberar a vaga.
 - **Licença renovada, mas o app continua bloqueado:** reinicie o app para chamar `initPayment` novamente; com conexão, a licença é consultada de novo.
