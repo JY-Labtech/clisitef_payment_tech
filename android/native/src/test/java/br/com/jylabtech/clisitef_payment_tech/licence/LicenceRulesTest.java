@@ -172,10 +172,44 @@ public class LicenceRulesTest {
     }
 
     @Test
-    public void cacheOlderThan7DaysIsNotUsable() {
+    public void cacheOlderThan72HoursIsNotUsable() {
         CheckLicenceEntity c = cache(now, daysFrom(now, 30),
-                new Date(now.getTime() - TimeUnit.DAYS.toMillis(7) - 1000));
+                new Date(now.getTime() - TimeUnit.HOURS.toMillis(72) - 1000));
         assertFalse(LicenceRules.isCacheUsable(c, KEY, CORE, now));
+    }
+
+    @Test
+    public void cacheExactly72HoursIsStillUsable() {
+        CheckLicenceEntity c = cache(now, daysFrom(now, 30),
+                new Date(now.getTime() - TimeUnit.HOURS.toMillis(72)));
+        assertTrue(LicenceRules.isCacheUsable(c, KEY, CORE, now));
+    }
+
+    @Test
+    public void cacheOfFourDaysIsNoLongerUsable() {
+        CheckLicenceEntity c = cache(now, daysFrom(now, 30), daysFrom(now, -4));
+        assertFalse(LicenceRules.isCacheUsable(c, KEY, CORE, now));
+    }
+
+    @Test
+    public void shouldRevalidateOnFirstCheckOfProcessAndAfterInterval() {
+        CheckLicenceEntity c = cache(now, daysFrom(now, 30),
+                new Date(now.getTime() - TimeUnit.MINUTES.toMillis(10)));
+        assertTrue(LicenceRules.shouldRevalidate(c, false, now));
+        assertFalse(LicenceRules.shouldRevalidate(c, true, now));
+        assertTrue(LicenceRules.shouldRevalidate(null, true, now));
+        c.setSavedLocalDatabaseAt(new Date(now.getTime() - LicenceRules.REVALIDATE_INTERVAL_MILLIS));
+        assertTrue(LicenceRules.shouldRevalidate(c, true, now));
+    }
+
+    @Test
+    public void definitiveRejectionCodes() {
+        for (int code : new int[]{400, 401, 402, 403, 404, 409, 410, 412, 423, 428}) {
+            assertTrue("HTTP " + code, LicenceRules.isDefinitiveRejection(code));
+        }
+        for (int code : new int[]{200, 301, 408, 429, 500, 502, 503, 504}) {
+            assertFalse("HTTP " + code, LicenceRules.isDefinitiveRejection(code));
+        }
     }
 
     @Test
