@@ -22,6 +22,11 @@ if (flutterVersionName == null) {
     flutterVersionName = "1.0"
 }
 
+// Keystore de desenvolvimento do fabricante (Positivo), não versionada.
+// Coloque-a em example/Chaves/positivo-keystore.jks para assinar com ela;
+// sem o arquivo, o example usa a assinatura de debug padrão.
+def positivoKeystore = rootProject.file("../Chaves/positivo-keystore.jks")
+
 android {
     namespace "com.qztech.clisitef_payment_tech_example"
     compileSdkVersion flutter.compileSdkVersion
@@ -30,7 +35,7 @@ android {
 
     signingConfigs {
         positivo {
-            storeFile file('..\\..\\Chaves\\positivo-keystore.jks')
+            storeFile positivoKeystore
             keyAlias 'platform'
             keyPassword '654321'
             storePassword '123456'
@@ -72,14 +77,14 @@ android {
             shrinkResources false
             minifyEnabled true
             initWith debug
-            signingConfig signingConfigs.positivo
+            if (positivoKeystore.exists()) signingConfig signingConfigs.positivo
             matchingFallbacks = ['debug']
         }
         debug {
             shrinkResources false
             minifyEnabled false
             initWith debug
-            signingConfig signingConfigs.positivo
+            if (positivoKeystore.exists()) signingConfig signingConfigs.positivo
             matchingFallbacks = ['debug']
         }
     }
