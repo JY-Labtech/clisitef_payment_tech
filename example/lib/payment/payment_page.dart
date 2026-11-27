@@ -1,163 +1,136 @@
-import 'package:flutter/material.dart';
 import 'package:clisitef_payment_tech/clisitef_payment_tech.dart';
-
-import 'payment_controller.dart';
+import 'package:flutter/material.dart';
 
 class PaymentPage extends StatefulWidget {
   const PaymentPage({Key? key}) : super(key: key);
 
   @override
-  _PaymentPageState createState() => _PaymentPageState();
+  State<PaymentPage> createState() => _PaymentPageState();
 }
 
 class _PaymentPageState extends State<PaymentPage> {
-  final PaymentController controller = PaymentController();
+  final serverIpController = TextEditingController(text: '127.0.0.1');
+  final storeCodeController = TextEditingController(text: '00000000');
+  final posNumberController = TextEditingController(text: 'IP000001');
+  final valueController = TextEditingController();
 
-  double? saleValue;
-  TextEditingController moneyController = TextEditingController();
+  bool busy = false;
+  String output = '';
+
+  SitefSettingsClisitef get settings => SitefSettingsClisitef(
+        serverIp: serverIpController.text.trim(),
+        storeCode: storeCodeController.text.trim(),
+        posNumber: posNumberController.text.trim(),
+      );
+
+  /// Valor no formato do CliSiTef, com vírgula decimal (ex.: "10,50").
+  String get value {
+    final parsed = double.tryParse(valueController.text.replaceAll(',', '.')) ?? 0;
+    return TefHelper.priceSanitized(parsed);
+  }
+
+  Future<void> run(String label, Future<String> Function() action) async {
+    FocusScope.of(context).unfocus();
+    setState(() {
+      busy = true;
+      output = '$label...';
+    });
+    try {
+      final result = await action();
+      setState(() => output = '$label: $result');
+    } catch (error) {
+      setState(() => output = '$label falhou: $error');
+    } finally {
+      setState(() => busy = false);
+    }
+  }
+
+  Future<String> configure() async {
+    final code = await ClisitefTech.I.payment.configureClisitef(sitefSettings: settings);
+    return code == 0 ? 'configurado (0)' : 'erro de configuração ($code)';
+  }
+
+  Future<String> pay(SitefModalityClisitef modality) async {
+    final now = DateTime.now();
+    String two(int v) => v.toString().padLeft(2, '0');
+    final response = await ClisitefTech.I.payment.clisitefTransaction(
+      sitefSettings: settings,
+      sitefTransaction: SitefTransactionClisitef(
+        sitefModality: modality,
+        valuePayment: value,
+        couponNumber: now.millisecondsSinceEpoch.toString(),
+        dateFiscal: '${now.year}${two(now.month)}${two(now.day)}',
+        hourFiscal: '${two(now.hour)}${two(now.minute)}${two(now.second)}',
+        operatorPos: 'operador',
+      ),
+    );
+    if (response.resultCode == 0) {
+      return 'aprovada (NSU ${response.tefNSUSitef}, autorização ${response.tefCodAuthorization})';
+    }
+    return 'não aprovada (${response.resultCode}) ${response.errorTransaction ?? ''}';
+  }
 
   @override
-  void initState() {
-    super.initState();
-    Future.microtask(() async {
-      try {
-        await ClisitefTech.I.initPayment(
-          licenceKey: '<SUA_LICENCA>',
-          // https://licence-server.invalid/pos-payments/licence/check em base64
-          licenceInternalKey: '***REMOVIDO***',
-        );
-      } catch (error) {
-        debugPrint('Falha ao inicializar o Clisitef: $error');
-      }
-    });
+  void dispose() {
+    serverIpController.dispose();
+    storeCodeController.dispose();
+    posNumberController.dispose();
+    valueController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: <Widget>[
-          const SizedBox(
-            height: 20,
-          ),
-          TextField(
-            onChanged: (value) => setState(() {
-              controller.setSaleValue(moneyController.text.isNotEmpty ? double.parse(moneyController.text) : 0.0);
-            }),
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(hintText: "Digite o valor"),
-            controller: moneyController,
-          ),
-          const SizedBox(
-            height: 20,
-          ),
-          const Text(
-            "Selecione o método de pagamento",
-            style: TextStyle(fontSize: 16),
-          ),
-          const SizedBox(
-            height: 20,
-          ),
-          Wrap(
-            spacing: 10.0,
-            children: <Widget>[
-              ElevatedButton(
-                child: const Text("Débito"),
-                onPressed: () {
-                  FocusScope.of(context).unfocus();
-                  setState(() {
-                    controller.clickPayment = true;
-                  });
-                  // ClisitefTech.I.payment.debitPayment(6);
-                },
-              ),
-              ElevatedButton(
-                child: const Text("Crédito"),
-                onPressed: controller.enable
-                    ? () {
-                        FocusScope.of(context).unfocus();
-                        setState(() {
-                          controller.clickPayment = true;
-                        });
-                        // ClisitefTech.I.payment.creditPayment(controller.saleValue);
-                      }
-                    : null,
-              ),
-              ElevatedButton(
-                child: const Text("Crédito Parc- 2"),
-                onPressed: controller.enable
-                    ? () {
-                        FocusScope.of(context).unfocus();
-                        setState(() {
-                          controller.clickPayment = true;
-                        });
-                        // ClisitefTech.I.payment.creditPaymentParc(
-                        //       value: controller.saleValue,
-                        //       installment: 2,
-                        //       withInterest: false,
-                        //     );
-                      }
-                    : null,
-              ),
-              ElevatedButton(
-                child: const Text("Voucher"),
-                onPressed: controller.enable
-                    ? () {
-                        FocusScope.of(context).unfocus();
-                        setState(() {
-                          controller.clickPayment = true;
-                        });
-                        // ClisitefTech.I.payment.voucherPayment(controller.saleValue);
-                      }
-                    : null,
-              ),
-              ElevatedButton(
-                child: const Text("ATIVAR PINPAD"),
-                onPressed: () async {
-                  FocusScope.of(context).unfocus();
-                  setState(() {
-                    controller.clickPayment = true;
-                  });
-                },
-              ),
-            ],
-          ),
-          const SizedBox(
-            height: 20,
-          ),
-          ElevatedButton(
-            onPressed: controller.clickPayment
-                ? () {
-                    controller.setSaleValue(0.0);
-                    // ClisitefTech.I.payment.abortTransaction();
-                  }
-                : null,
-            child: const Text("Cancelar Operação"),
-          ),
-          const SizedBox(
-            height: 20,
-          ),
-          ElevatedButton(
-            onPressed: () {
-              // ClisitefTech.I.payment.abortTransaction();
-            },
-            child: const Text("Abortar transação"),
-          ),
-          const SizedBox(
-            height: 20,
-          ),
-          ElevatedButton(
-            onPressed: () {
-              // ClisitefTech.I.payment.cancelTransaction(
-              //       amount: controller.saleValue,
-              //       transactionType: PaymentTypeTransaction.CREDIT,
-              //     );
-            },
-            child: const Text("Cancelar transação"),
-          ),
-        ],
-      ),
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: <Widget>[
+        TextField(
+          controller: serverIpController,
+          decoration: const InputDecoration(labelText: 'IP do servidor SiTef'),
+        ),
+        TextField(
+          controller: storeCodeController,
+          decoration: const InputDecoration(labelText: 'Código da loja (8 dígitos)'),
+        ),
+        TextField(
+          controller: posNumberController,
+          decoration: const InputDecoration(labelText: 'Terminal (ex.: IP000001)'),
+        ),
+        TextField(
+          controller: valueController,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(labelText: 'Valor (R\$)'),
+        ),
+        const SizedBox(height: 20),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: <Widget>[
+            ElevatedButton(
+              onPressed: busy ? null : () => run('Configuração', configure),
+              child: const Text('Configurar TEF'),
+            ),
+            ElevatedButton(
+              onPressed: busy ? null : () => run('Crédito', () => pay(SitefModalityClisitef.creditCard)),
+              child: const Text('Crédito'),
+            ),
+            ElevatedButton(
+              onPressed: busy ? null : () => run('Débito', () => pay(SitefModalityClisitef.debitCard)),
+              child: const Text('Débito'),
+            ),
+            ElevatedButton(
+              onPressed: busy ? null : () => run('PIX', () => pay(SitefModalityClisitef.pix)),
+              child: const Text('PIX'),
+            ),
+            ElevatedButton(
+              onPressed: busy ? null : () => run('Cancelamento', () => pay(SitefModalityClisitef.cancellation)),
+              child: const Text('Cancelamento'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Text(output),
+      ],
     );
   }
 }

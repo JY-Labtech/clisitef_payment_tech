@@ -1,7 +1,15 @@
 name: clisitef_payment_tech
-description: Plugin Flutter para integrar sua aplicação com o SDK Android da Clisitef para meios de pagamento.
-version: 3.2.0
+description: Flutter plugin for the CliSiTef TEF SDK (Software Express/Fiserv) on Android POS terminals and PIN pads, with credit, debit, PIX and cancellation.
+version: 4.0.0
+homepage: https://github.com/JY-Labtech/clisitef_payment_tech
 repository: https://github.com/JY-Labtech/clisitef_payment_tech
+issue_tracker: https://github.com/JY-Labtech/clisitef_payment_tech/issues
+topics:
+  - payment
+  - pos
+  - tef
+  - android
+  - brazil
 
 environment:
   sdk: ">=3.0.0 <4.0.0"

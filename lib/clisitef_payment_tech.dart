@@ -1,7 +1,19 @@
-import 'package:clisitef_payment_tech/licence/constants/licence_constants.dart';
-import 'package:flutter/foundation.dart';
-import 'package:clisitef_payment_tech/payments/payment.dart';
+/// Plugin Flutter para o TEF CliSiTef (Software Express / Fiserv) em Android.
+library clisitef_payment_tech;
 
+import 'package:flutter/foundation.dart';
+
+import 'payments/payment.dart';
+
+export 'payments/enum/sitef_modality.dart';
+export 'payments/handler/iclisitef_handler.dart';
+export 'payments/helper/tef_helper.dart';
+export 'payments/model/sitef_settings.dart';
+export 'payments/model/sitef_transaction.dart';
+export 'payments/model/tef_transaction_response.dart';
+export 'payments/payment.dart';
+
+/// Ponto de entrada do plugin. Use a instância única [ClisitefTech.I].
 class ClisitefTech {
   ClisitefTech._internal();
   static ClisitefTech? _instance;
@@ -21,28 +33,12 @@ class ClisitefTech {
     Payment.resetForTesting();
   }
 
-  /// Valida a licença e libera o plugin.
+  /// Cria (ou devolve) a instância de [Payment] ligada ao canal nativo.
   ///
-  /// [licenceInternalKey] é opcional (padrão: [licenceCheck], servidor oficial
-  /// da JY Labtech). Lança `PlatformException(code: 'LICENCE_ERROR')` se a
-  /// licença for inválida, vencida, suspensa ou cancelada.
-  Future<Payment> initPayment({
-    required String licenceKey,
-    String licenceInternalKey = licenceCheck,
-  }) async {
-    final paymentInstance = Payment.create(channel: channel);
-    await paymentInstance.ensureInitialized(
-      licenceKey: licenceKey,
-      licenceInternalKey: licenceInternalKey,
-    );
-    _payment = paymentInstance;
-    return paymentInstance;
-  }
+  /// Não faz chamada ao nativo nem exige chave: basta chamar uma vez antes das
+  /// operações, ou usar direto o getter [payment].
+  Future<Payment> initPayment() async => payment;
 
-  Payment get payment {
-    if (_payment == null) {
-      throw Exception('Payment não autorizado. Chame initPayment com as chaves de licença válidas.');
-    }
-    return _payment!;
-  }
+  /// Instância de [Payment] usada nas operações de TEF.
+  Payment get payment => _payment ??= Payment.create(channel: channel);
 }

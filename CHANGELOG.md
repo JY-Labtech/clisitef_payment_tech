@@ -1,3 +1,26 @@
+## 4.0.0
+
+O plugin agora é open source, sob a licença MIT. Não há mais licença paga, cobrança nem validação em servidor.
+
+- **BREAKING:** licença e cobrança removidas. Removidos da API:
+  - os parâmetros `licenceKey` e `licenceInternalKey` de `ClisitefTech.I.initPayment` (agora `initPayment()` sem parâmetros);
+  - o método `Payment.ensureInitialized`;
+  - a constante `licenceCheck` e o arquivo `package:clisitef_payment_tech/licence/constants/licence_constants.dart` (`channel` e `CHANNEL_NAME` passaram para `payments/payment.dart`, exportado pelo pacote);
+  - os códigos de erro `LICENCE_ERROR` e `LICENCE_NOT_INITIALIZED`;
+  - o método `initialize` do canal de plataforma.
+- **BREAKING (nativo):** removidas as classes de licença (`LicenceConfig`, `LicenceRules`, `CheckLicenceTech`, `CheckLicenceEntity`, `LicenceProvider`, `LicenceResult`, `EncryptedLicenceStorage`, `LicenceStorage`, `LicenceNetwork`, `LicenceClock`) e o gate por operação. `configureTef`, `startTransaction`, `transactionMsitef` e `menuMSitef` chamam o SDK direto, com uma única resposta ao Dart.
+- Dependências removidas: `com.squareup.okhttp3:okhttp` e `androidx.security:security-crypto` (só serviam à licença). Nenhuma chamada HTTP aos servidores da JY Labtech.
+- `ClisitefTech.I.payment` funciona sem `initPayment` (a instância é criada sob demanda).
+- `package:clisitef_payment_tech/clisitef_payment_tech.dart` passa a exportar `Payment`, os modelos (`SitefSettingsClisitef`, `SitefTransactionClisitef`, `TefTransactionResponseClisitef`), `SitefModalityClisitef`, `TefHelper` e `IClisitefHandler`.
+- Corrigido: `clisitefTransaction` lançava `TypeError` ao ler a resposta do nativo (`TefTransactionModel.fromJson` recebia um `Map` em vez de `String`).
+- Corrigido (desde a 3.0.0): o APK do app ficava sem as bibliotecas nativas da CliSiTef (`libclisitef.so`, `libssl.so`, `libcrypto.so`, `libtlswnb.so`, `libgsurf_rsa.so`), sem os assets (`CLSIT`, `Mens.txt`), sem os layouts/recursos das telas e sem as activities no manifest, porque o plugin passou a depender só do `.jar` com as classes. O módulo `android/` agora usa os `res`, `assets` e `jniLibs` de `android/native` e declara as activities e permissões no próprio manifest, sem `android:label`/`android:icon` (o app não precisa mais de `tools:replace`).
+- Corrigido: quando o `configure` da CliSiTef falhava em `clisitefTransaction`, o nativo não respondia e o `Future` ficava pendente para sempre. Agora responde uma única vez `PlatformException(code: 'CONFIGURE_ERROR', details: <código>)`. Exceções do SDK nesse fluxo viram `UNEXPECTED_ERROR`.
+- Licença do projeto: MIT (antes BSD 2-Clause). O código-fonte de `android/native` passa a ser publicado no pacote.
+- README reescrito, com referência da API, exemplos por operação, erros e guia de migração.
+- Testes: removidos os testes de licença (Dart e JVM). Novos testes Dart de `configureClisitef` e `clisitefTransaction` (parâmetros, modalidades, resposta, nova tentativa com `-1` e erros) e testes JVM do roteamento do plugin e de `ClisitefTech` (incluindo `CONFIGURE_ERROR`).
+- Example: sem chave de licença; tela com configuração do TEF e transações de crédito, débito, PIX e cancelamento.
+- Binários `android/libs/clisitef_payment_tech-native.jar` e `clisitef_payment_tech-release.aar` regenerados.
+
 ## 3.2.0
 
 - Licença conforme o contrato do jylabtech_core (JYN-234): o cache offline vale por no máximo 72 horas (antes 7 dias) e só é usado quando o servidor não responde (sem internet, timeout, 408/429, 5xx).

@@ -3,8 +3,6 @@ package br.com.jylabtech.clisitef_payment_tech;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -12,13 +10,7 @@ import androidx.annotation.Nullable;
 
 import com.google.gson.Gson;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import br.com.jylabtech.clisitef_payment_tech.core.ClisitefTech;
-import br.com.jylabtech.clisitef_payment_tech.licence.LicenceConfig;
-import br.com.jylabtech.clisitef_payment_tech.licence.LicenceResult;
-import br.com.jylabtech.clisitef_payment_tech.licence.LicenceRules;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.activity.ActivityAware;
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
@@ -44,11 +36,7 @@ public final class ClisitefPaymentTechNativePlugin implements
     private ClisitefTech clisitefTech;
     private TefResponse tefResponse;
     private Gson gson;
-    private String cachedLicenceKey = "";
-    private String cachedLicenceInternalKey = "";
     private MethodChannel.Result pendingResult;
-    private final Handler mainHandler = new Handler(Looper.getMainLooper());
-    private ExecutorService licenceExecutor;
 
     private static final int REQUEST_CODE_MSITEF = 1234;
     private static final int REQUEST_CODE_CLISITEF = 1;
@@ -102,51 +90,18 @@ public final class ClisitefPaymentTechNativePlugin implements
         activityBinding = null;
         tefResponse = null;
         gson = null;
-        synchronized (this) {
-            if (licenceExecutor != null) {
-                licenceExecutor.shutdown();
-                licenceExecutor = null;
-            }
-        }
     }
 
     @Override
     public void onMethodCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
-        try {
-            if ("initialize".equals(call.method)) {
-                handleInitialize(call, result);
-                return;
-            }
-
-            if (!ClisitefTech.isLicensedMethod(call.method)) {
-                result.notImplemented();
-                return;
-            }
-
-            ensureClisitefTech();
-
-            if (clisitefTech == null) {
-                result.error(
-                        "NO_ACTIVITY",
-                        "Plugin não está associado a uma Activity. Aguarde onAttachedToActivity.",
-                        null
-                );
-                return;
-            }
-
-            // Gate de licença por operação: valida (cache ou servidor) em background
-            // e só chama o SDK na main thread se a licença estiver válida.
-            final ClisitefTech tech = clisitefTech;
-            runLicenceCheck(tech, result, () -> executeLicensedCall(call, result));
-        } catch (Exception exception) {
-            Log.e(TAG, "Erro ao processar chamada do método " + call.method, exception);
-            result.error("UNEXPECTED_ERROR", exception.getMessage(), null);
+        if (!ClisitefTech.isSupportedMethod(call.method)) {
+            result.notImplemented();
+            return;
         }
-    }
 
-    private void executeLicensedCall(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
         try {
             ensureClisitefTech();
+
             if (clisitefTech == null) {
                 result.error(
                         "NO_ACTIVITY",
@@ -155,8 +110,13 @@ public final class ClisitefPaymentTechNativePlugin implements
                 );
                 return;
             }
+
+            // Guarda o result antes: a Activity pode responder logo depois de aberta.
             pendingResult = result;
-            clisitefTech.handleMethodCall(call, result);
+            boolean awaitsActivityResult = clisitefTech.handleMethodCall(call, result);
+            if (!awaitsActivityResult && pendingResult == result) {
+                pendingResult = null;
+            }
         } catch (Exception exception) {
             Log.e(TAG, "Erro ao processar chamada do método " + call.method, exception);
             if (pendingResult == result) {
@@ -166,83 +126,9 @@ public final class ClisitefPaymentTechNativePlugin implements
         }
     }
 
-    /**
-     * Valida a licença fora da main thread e responde na main thread:
-     * erro {@code LICENCE_ERROR} se inválida, ou executa {@code onValid}.
-     */
-    private void runLicenceCheck(@NonNull final ClisitefTech tech,
-                                 @NonNull final MethodChannel.Result result,
-                                 @NonNull final Runnable onValid) {
-        ExecutorService executor = getLicenceExecutor();
-        executor.execute(() -> {
-            LicenceResult licenceResult;
-            try {
-                licenceResult = tech.validateLicence();
-            } catch (Exception exception) {
-                Log.e(TAG, "Erro ao validar licença", exception);
-                licenceResult = LicenceRules.error("Erro ao validar licença: " + exception.getMessage());
-            }
-            final LicenceResult finalResult = licenceResult;
-            mainHandler.post(() -> {
-                if (finalResult == null || finalResult.getResult() != LicenceRules.RESULT_SUCCESS) {
-                    String message = finalResult != null ? finalResult.getErrorMessage() : null;
-                    if (message == null || message.trim().isEmpty()) {
-                        message = "Licença inválida.";
-                    }
-                    result.error("LICENCE_ERROR", message, null);
-                    return;
-                }
-                onValid.run();
-            });
-        });
-    }
-
-    private synchronized ExecutorService getLicenceExecutor() {
-        if (licenceExecutor == null || licenceExecutor.isShutdown()) {
-            licenceExecutor = Executors.newSingleThreadExecutor();
-        }
-        return licenceExecutor;
-    }
-
-    private void handleInitialize(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
-        String licenceKey = call.argument("licenceKey");
-        String licenceInternalKey = call.argument("licenceInternalKey");
-
-        if (licenceKey == null || licenceKey.trim().isEmpty()) {
-            result.error("INVALID_ARGUMENT", "licenceKey é obrigatório.", null);
-            return;
-        }
-
-        // licenceInternalKey é opcional: vazio usa a URL oficial do core e valores
-        // fora do servidor oficial são ignorados (LicenceConfig.resolveLicenceUrl).
-        if (licenceInternalKey == null || licenceInternalKey.trim().isEmpty()) {
-            licenceInternalKey = LicenceConfig.LICENCE_CHECK_URL;
-        }
-
-        cachedLicenceKey = licenceKey;
-        cachedLicenceInternalKey = licenceInternalKey;
-
-        ensureClisitefTech();
-
-        if (clisitefTech == null) {
-            result.error(
-                    "NO_ACTIVITY",
-                    "Plugin não está associado a uma Activity. Aguarde onAttachedToActivity.",
-                    null
-            );
-            return;
-        }
-
-        clisitefTech.updateLicenceKeys(licenceKey, licenceInternalKey);
-        runLicenceCheck(clisitefTech, result, () -> result.success(true));
-    }
-
     private void ensureClisitefTech() {
         if (clisitefTech == null && context != null && activity != null) {
             clisitefTech = new ClisitefTech(context, activity);
-            if (!cachedLicenceKey.isEmpty() && !cachedLicenceInternalKey.isEmpty()) {
-                clisitefTech.updateLicenceKeys(cachedLicenceKey, cachedLicenceInternalKey);
-            }
         } else if (clisitefTech != null && activity != null) {
             clisitefTech.updateActivity(activity);
         }

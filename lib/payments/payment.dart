@@ -5,8 +5,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-import '../licence/constants/licence_constants.dart' show licenceCheck;
-
 import 'enum/sitef_modality.dart';
 import 'helper/tef_helper.dart';
 import 'model/json/tef_transaction_model.dart';
@@ -16,15 +14,13 @@ import 'model/tef_transaction_response.dart';
 
 const CHANNEL_NAME = "clisitef_payment_tech";
 
+/// Canal de plataforma usado pelo plugin.
+const channel = MethodChannel(CHANNEL_NAME);
+
 final class Payment {
   final MethodChannel channel;
 
   static Payment? _instance;
-
-  bool _licenceValidated = false;
-  String? _lastLicenceKey;
-  String? _lastLicenceInternalKey;
-  Future<void>? _initializing;
 
   Payment._({
     required this.channel,
@@ -42,66 +38,10 @@ final class Payment {
     return payment;
   }
 
-  /// Limpa a instância compartilhada e o estado da licença (uso em testes).
+  /// Limpa a instância compartilhada (uso em testes).
   @visibleForTesting
   static void resetForTesting() {
     _instance = null;
-  }
-
-  Future<void> ensureInitialized({
-    required String licenceKey,
-    String licenceInternalKey = licenceCheck,
-  }) async {
-    if (_licenceValidated &&
-        _lastLicenceKey == licenceKey &&
-        _lastLicenceInternalKey == licenceInternalKey) {
-      return;
-    }
-
-    if (_initializing != null) {
-      await _initializing;
-      if (_licenceValidated &&
-          _lastLicenceKey == licenceKey &&
-          _lastLicenceInternalKey == licenceInternalKey) {
-        return;
-      }
-    }
-
-    _initializing = _initializeLicence(
-      licenceKey: licenceKey,
-      licenceInternalKey: licenceInternalKey,
-    );
-
-    _licenceValidated = false;
-    try {
-      await _initializing;
-      _licenceValidated = true;
-      _lastLicenceKey = licenceKey;
-      _lastLicenceInternalKey = licenceInternalKey;
-    } finally {
-      _initializing = null;
-    }
-  }
-
-  Future<void> _initializeLicence({
-    required String licenceKey,
-    required String licenceInternalKey,
-  }) async {
-    final bool success = await channel.invokeMethod<bool>(
-          'initialize',
-          {
-            'licenceKey': licenceKey,
-            'licenceInternalKey': licenceInternalKey,
-          },
-        ) ??
-        false;
-
-    if (!success) {
-      throw PlatformException(
-        code: 'LICENCE_ERROR',
-        message: 'Falha ao validar licença no dispositivo.',
-      );
-    }
   }
 
   final Map<SitefModalityClisitef, String> _modalityMap = {
@@ -164,15 +104,11 @@ final class Payment {
     );
   }
 
+  /// Configura o CliSiTef (`configure` do SDK) com o servidor, a loja e o
+  /// terminal de [sitefSettings]. Retorna o código do SDK: `0` = sucesso.
   Future<int> configureClisitef({
     required SitefSettingsClisitef sitefSettings,
   }) async {
-    if (!_licenceValidated) {
-      throw PlatformException(
-        code: 'LICENCE_NOT_INITIALIZED',
-        message: 'Chame ClisitefTech.I.initPayment antes de configurar o TEF.',
-      );
-    }
     Map<String, dynamic> params = {
       'ipSitef': sitefSettings.serverIp,
       'storeId': sitefSettings.storeCode,
@@ -187,16 +123,12 @@ final class Payment {
     }
   }
 
+  /// Inicia uma transação TEF na modalidade de [sitefTransaction] e devolve a
+  /// resposta do CliSiTef. `resultCode == 0` indica transação aprovada.
   Future<TefTransactionResponseClisitef> clisitefTransaction({
     required SitefSettingsClisitef sitefSettings,
     required SitefTransactionClisitef sitefTransaction,
   }) async {
-    if (!_licenceValidated) {
-      throw PlatformException(
-        code: 'LICENCE_NOT_INITIALIZED',
-        message: 'Chame ClisitefTech.I.initPayment antes de iniciar transações.',
-      );
-    }
     final modality = int.tryParse(_modalityMap[sitefTransaction.sitefModality] ?? '0') ?? 0;
 
     String restrictions = '';
@@ -220,8 +152,8 @@ final class Payment {
 
     try {
       String resultTransaction = await channel.invokeMethod('startTransaction', paramsTransaction);
-      final resultJson = json.decode(resultTransaction);
-      final model = TefTransactionModel.fromJson(resultJson);
+      final resultJson = json.decode(resultTransaction) as Map<String, dynamic>;
+      final model = TefTransactionModel.fromMap(resultJson);
 
       if (model.resultCode != 0 || model.tefNSUAuthorizing == '') {
         if (model.resultCode == -1) {

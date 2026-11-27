@@ -34,7 +34,13 @@ public class ClisitefUsecase {
         return confResult;
     }
 
-    public void clisitefTransaction(Activity activity, Context context, MethodCall call) {
+    /**
+     * Configura a CliSiTef e abre a TransactionActivity.
+     *
+     * @return o código do configure: {@code 0} quando a activity foi aberta;
+     * diferente de {@code 0}, nada foi aberto e o chamador deve responder o erro.
+     */
+    public int clisitefTransaction(Activity activity, Context context, MethodCall call) {
         int modalidade = call.argument("modalidade");
         String valor = call.argument("valor");
         String cupomFiscal = call.argument("cupomFiscal");
@@ -53,8 +59,9 @@ public class ClisitefUsecase {
         try {
             inicializeClisitef(context);
             int confResult = configureTEFsdk(ipServidorTef, storeId, terminalId, parametrosAdc);
-            if(confResult != 0) {
-                return;
+            if (confResult != 0) {
+                clisitef = null;
+                return confResult;
             }
             Intent i = new Intent(context, TransactionActivity.class);
 
@@ -80,8 +87,11 @@ public class ClisitefUsecase {
                 i.putExtra("operador", "");
                 activity.startActivityForResult(i, RequestCode.PERFORM_TRANSACTION);
             }
-        } catch (Exception e) {
+            return 0;
+        } catch (RuntimeException e) {
+            // Repassa ao plugin, que responde UNEXPECTED_ERROR ao Dart uma única vez.
             Log.d("print", "***Erro StartSitef: " + e);
+            throw e;
         }
     }
 

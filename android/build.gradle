@@ -28,7 +28,7 @@ if (!libsDir.exists()) {
 
 def nativeJarFiles = fileTree(dir: "libs", include: ["*-native.jar"]).files
 if (nativeJarFiles.isEmpty()) {
-    throw new GradleException("Nenhum artefato nativo encontrado em android/libs. Execute scripts/build_android_aar.sh para gerar os binários proprietários.")
+    throw new GradleException("Nenhum artefato nativo encontrado em android/libs. Execute scripts/build_android_aar.sh para gerar os binários do módulo nativo.")
 }
 
 def requiredArtifacts = [
@@ -56,6 +56,24 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
+    // O código Java vem pré-compilado em libs/*-native.jar, mas recursos (layouts,
+    // estilos, drawables), assets da CliSiTef (CLSIT, Mens.txt) e as bibliotecas .so
+    // (libclisitef, libssl, libcrypto, libtlswnb, libgsurf_rsa) não cabem num jar:
+    // vêm direto de android/native para chegarem ao APK do app.
+    sourceSets {
+        main {
+            res.srcDirs += ["native/src/main/res"]
+            assets.srcDirs += ["native/src/main/assets"]
+            jniLibs.srcDirs += ["native/src/main/jniLibs"]
+        }
+    }
+
+    packaging {
+        jniLibs {
+            keepDebugSymbols += ["**/libclisitef.so"]
+        }
+    }
 }
 
 dependencies {
@@ -70,8 +88,6 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
     implementation("com.google.android.material:material:1.11.0")
     implementation("com.google.code.gson:gson:2.10.1")
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation("androidx.security:security-crypto:1.1.0-alpha05")
     implementation("com.journeyapps:zxing-android-embedded:4.3.0") {
         transitive = false
     }

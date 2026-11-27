@@ -1,198 +1,464 @@
-<div align="center" id="top"> 
-  <img src="https://esqueciminhasenha.softwareexpress.com.br/migrador/login/img/SiTeffromFiserv_Logo_RGB.png" height=100 alt="clisitef_payment_tech" />
+# clisitef_payment_tech
 
-&#xa0;
+> Open source Flutter plugin (MIT) for the CliSiTef TEF SDK (Software Express / Fiserv) on Android: configure the TEF and run credit, debit, PIX and cancellation transactions.
 
-</div>
+[![pub package](https://img.shields.io/pub/v/clisitef_payment_tech.svg)](https://pub.dev/packages/clisitef_payment_tech)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-<h1 align="center">Clisitef Payment Tech</h1>
+Plugin Flutter para integrar o app ao TEF **CliSiTef** da Software Express (Fiserv) em Android. O plugin configura a CliSiTef, abre o fluxo de transação do SDK (telas de menu, perguntas, PIN pad e QR Code) e devolve ao Dart a resposta da transação, com NSU, código de autorização e comprovantes.
 
-<p align="center">
-  <a href="#dart-about">Sobre</a> &#xa0; | &#xa0; 
-  <a href="#sparkles-features">Funcionalidades</a> &#xa0; | &#xa0;
-  <a href="#rocket-technologies">Tecnologias</a> &#xa0; | &#xa0;
-  <a href="#white_check_mark-requirements">Requisitos</a> &#xa0; | &#xa0;
-  <a href="#checkered_flag-starting">Start</a> &#xa0; | &#xa0;
-  <a href="#memo-license">Licença</a> &#xa0; | &#xa0;
-  <a href="https://github.com/JY-Labtech" target="_blank">Autor</a>
-</p>
+O projeto é open source, sob a licença MIT. Não há chave de licença, cobrança nem validação em servidor.
 
-<br>
+## Funcionalidades
 
-<a href="https://buymeacoffee.com/jhonathanqr" target="_blank">
-  <img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Book" style="height: 41px !important;width: 174px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;">
-</a>
+- Configuração da CliSiTef (`configureClisitef`): servidor SiTef, loja, terminal e parâmetros adicionais.
+- Transação TEF (`clisitefTransaction`) nas modalidades:
+  - crédito (à vista ou parcelado: a forma de pagamento é escolhida nas telas do CliSiTef);
+  - débito;
+  - PIX e carteira digital;
+  - cancelamento (estorno);
+  - menu geral do CliSiTef (`undefined`), onde o operador escolhe a operação que o SiTef liberar para o terminal (por exemplo, reimpressão).
+- Restrição de transações habilitadas no crédito e no débito (`enabledTransactions`).
+- Nova tentativa automática: se a transação voltar com `resultCode == -1` (CliSiTef não configurada), o plugin reconfigura e tenta de novo.
+- Mensagens de erro em português para os códigos de retorno (`errorTransaction` e `TefHelper`).
 
-[![Github Badge](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white&link=https://github.com/jhonathanqz)](https://github.com/jhonathanqz)
+O módulo nativo também tem os métodos `transactionMsitef` e `menuMSitef` (integração com o app m-SiTef por intent), e os modelos `MSitefParams`/`MSitefMenuParams` existem em `lib/payments/model/params/`. Esses métodos ainda não são expostos pela API Dart.
 
-## :dart: Sobre
+## Compatibilidade e requisitos
 
-Plugin Flutter para facilitar integração com o TEF da `Clisitef`.
+| Item | Requisito |
+| --- | --- |
+| Plataforma | Android (não há implementação iOS) |
+| minSdk | 23 |
+| compileSdk do plugin | 34 |
+| Dart | `>=3.0.0 <4.0.0` |
+| Flutter | `>=3.0.0` |
+| SDK do fabricante | CliSiTef (`clisitef-android`), Gertec GEDI (`libgedi`, GPOS700) e PPComp, já inclusos em `android/libs` |
+| Servidor | Cadastro na Software Express/Fiserv, com IP do servidor SiTef, código da loja e número do terminal |
 
-## 🔐 Licenciamento
+O plugin não funciona atrás de **proxy**: a CliSiTef precisa de acesso direto ao servidor SiTef.
 
-O plugin só funciona com uma licença válida, validada pela API de licenças da JY Labtech (jylabtech_core).
+### Permissões
 
-### Onde adquirir
+O manifest do plugin é mesclado ao do app e declara:
 
-Cadastre-se e gerencie suas licenças no portal **[portal.jylabtech.com.br](https://portal.jylabtech.com.br)**. Quem já tinha conta no portal antigo entra com o mesmo e-mail e a mesma senha.
+- `USB_PERMISSION`, `uses-feature android.hardware.usb.host` (obrigatório) para o PIN pad USB;
+- `NFC` e `uses-feature android.hardware.nfc`;
+- `BLUETOOTH`, `BLUETOOTH_ADMIN` (até API 30), `BLUETOOTH_SCAN`, `BLUETOOTH_CONNECT` e `uses-feature android.hardware.bluetooth_le` (opcional) para PIN pad Bluetooth;
+- `READ_EXTERNAL_STORAGE`, `WRITE_EXTERNAL_STORAGE`, `MANAGE_EXTERNAL_STORAGE` (pasta de trabalho da CliSiTef);
+- `SET_TIME`.
 
-- Produto: **Licença plugin de pagamento** — a mesma licença vale para qualquer plugin de pagamento da JY Labtech.
-- Plano `mensal`: cobrado por dispositivo. Cada aparelho que valida a licença ocupa uma vaga.
-- Plano `debug`: cortesia concedida automaticamente no cadastro, válida por 365 dias e limitada a 2 aparelhos. Use para desenvolvimento e testes.
-- Os aparelhos vinculados podem ser consultados e desativados pelo portal. Um aparelho desativado deixa de validar a licença.
-- **As chaves de licença já existentes continuam valendo**, com os mesmos valores. Chaves novas (formato `JYL-...`) também funcionam.
+As permissões de execução (Bluetooth, armazenamento) devem ser pedidas pelo app quando o Android exigir.
 
-### Chaves
+## Instalação
 
-As chaves são informadas em `ClisitefTech.I.initPayment` (não são mais lidas de `local.properties`):
-
-| Parâmetro | Valor |
-|---|---|
-| `licenceKey` | Obrigatório. A chave da sua licença, copiada do portal. |
-| `licenceInternalKey` | Opcional. Padrão: constante `licenceCheck` (`https://licence-server.invalid/pos-payments/licence/check` em base64). |
-
-```dart
-await ClisitefTech.I.initPayment(licenceKey: 'SUA_LICENCA');
+```bash
+flutter pub add clisitef_payment_tech
 ```
 
-O plugin sempre valida a licença no servidor oficial da JY Labtech. A URL fica travada no código nativo: se o `licenceInternalKey` apontar para qualquer outro endereço, inclusive o servidor antigo (`***REMOVIDO***...`), o valor é ignorado e a validação é feita no servidor oficial.
-
-### Como funciona a validação
-
-- Na chamada de `initPayment`, o plugin envia ao servidor a chave e a identificação do aparelho (ANDROID_ID, serial e modelo). O aparelho é vinculado à licença na primeira validação.
-- **Toda operação** (`configureClisitef`, `clisitefTransaction` e os métodos do m-SiTef) confere a licença no nativo antes de chamar o SDK. Não basta ter chamado `initPayment` uma vez: se a licença vencer, for suspensa ou cancelada, as operações seguintes falham.
-- **Revalidação**: a primeira operação depois de abrir o app sempre consulta o servidor; depois, a licença é consultada de novo a cada **4 horas** de uso.
-- **Bloqueio imediato**: se o servidor recusar a licença (cliente bloqueado no portal, licença vencida, cancelada ou suspensa, não encontrada, aparelho desativado ou limite de aparelhos), o cache é apagado e as operações passam a falhar com `LICENCE_ERROR` na hora.
-- **Cache offline**: após uma validação bem-sucedida, o resultado fica salvo no aparelho de forma criptografada. Ele só é usado quando o servidor não responde (sem internet, timeout, 408/429 ou erro 5xx) e por no máximo **72 horas** desde a última validação online, desde que a licença continue dentro da validade. Depois de uma falha de rede o plugin espera 5 minutos antes de tentar o servidor de novo. Um cache com data de gravação no futuro (relógio adulterado), de outra chave ou de outro servidor é descartado. Sem internet e sem cache válido, as operações falham com `LICENCE_ERROR`.
-- O vencimento (`expiredAt`) já considera o período de tolerância em caso de atraso no pagamento.
-- A consulta ao servidor tem timeout de 15 segundos e roda fora da thread principal.
-
-### Erros de licença
-
-Se a licença for inválida, vencida, suspensa ou cancelada, `initPayment` e qualquer operação lançam `PlatformException` com `code: 'LICENCE_ERROR'` e `message` com a mensagem devolvida pelo servidor (ou `Erro ao validar licença (HTTP <código>)` quando o servidor não devolve mensagem). Chamar uma operação sem um `initPayment` bem-sucedido lança `PlatformException` com `code: 'LICENCE_NOT_INITIALIZED'`.
-
-| HTTP | Situação | O que fazer |
-|---|---|---|
-| 404 | Licença não encontrada. | Confira o `licenceKey` (sem espaços). |
-| 412 | Limite de aparelhos da licença atingido ou aparelho desativado. | Desative um aparelho antigo ou contrate mais vagas no portal; reative o aparelho, se for o caso. |
-| 428 | Licença vencida, suspensa ou cancelada. | Regularize ou renove a licença no portal. |
-| 403 | Chave não enviada. | Informe o `licenceKey` em `initPayment`. |
-| 400 | O aparelho não enviou um identificador estável. | Verifique se o app consegue ler o ANDROID_ID do aparelho. |
-| 429 | Muitas tentativas em pouco tempo. | Aguarde alguns instantes e tente de novo. |
-
-Um `licenceKey` vazio gera `PlatformException` com `code: 'INVALID_ARGUMENT'`.
-
-### Troubleshooting
-
-- **Erro de conexão / timeout:** o aparelho precisa de acesso à internet (sem proxy) ao abrir o app e, depois, ao menos a cada 72 horas (sem internet, a operação só funciona se houver uma validação bem-sucedida nas últimas 72 horas).
-- **404 com uma chave que funcionava:** confira se não houve erro ao copiar a chave.
-- **412 após trocar de aparelho:** desative o aparelho antigo no portal para liberar a vaga.
-- **Licença renovada, mas o app continua bloqueado:** reinicie o app para chamar `initPayment` novamente; com conexão, a licença é consultada de novo.
-
-## :sparkles: Funcionalidades
-
-:heavy_check_mark: Cartão de crédito
-:heavy_check_mark: Cartão de débito
-:heavy_check_mark: PIX
-:heavy_check_mark: Cancelamento
-:heavy_check_mark: Reimpressão
-
-## :rocket: Tecnologias
-
-#### Para que o plugin funcione corretamente é necessário ter cadastro na Fiserv e passar alguns dados de configuração como parâmetro das funções.
-
-- [Flutter](https://docs.flutter.dev/)
-
-## :white_check_mark: Requisitos
-
-Para que o plugin funcione corretamente é necessário ter cadastro no Fiserv e suas credenciais de acesso.
-
-### ⚠️⚠️⚠️ Esse plugin não funciona com PROXY!!! ⚠️⚠️⚠️
-
-## :checkered_flag: Starting
-
-Adicione a dependência no `pubspec.yaml`:
+Ou no `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  clisitef_payment_tech: ^3.2.0
+  clisitef_payment_tech: ^4.0.0
 ```
 
-Inicialmente para liberar o uso do plugin, é necessário chamar o método `initPayment`, responsável por validar as chaves de licença (veja [Licenciamento](#-licenciamento)) e inicializar o SDK. A chamada é assíncrona e deve ser aguardada antes de qualquer operação:
+## Configuração Android
+
+Não é preciso repositório Maven nem credencial extra: o SDK da CliSiTef e as bibliotecas da Gertec/PPComp vêm no pacote (`android/libs`). As bibliotecas nativas da CliSiTef (`libclisitef.so`, `libssl.so`, `libcrypto.so`, `libtlswnb.so`, `libgsurf_rsa.so`, para `arm64-v8a`, `armeabi-v7a`, `x86` e `x86_64`), os assets (`CLSIT`, `Mens.txt`) e os layouts das telas entram no APK automaticamente. As activities do fluxo de transação (`TransactionActivity`, `MenuActivity`, `DialogActivity`, `YesNoActivity`, `MessageActivity`, `MyActivityQRCode`, `ConfigureActivity`) já estão declaradas no manifest do plugin.
+
+1. Garanta `minSdkVersion 23` (ou maior) em `android/app/build.gradle`:
+
+   ```groovy
+   android {
+       defaultConfig {
+           minSdkVersion 23
+       }
+   }
+   ```
+
+2. Se o projeto usa `android.enableJetifier=true`, adicione ao `android/gradle.properties` a lista abaixo. Ela evita que o Jetifier tente transformar os jars do engine do Flutter, que já são AndroidX:
+
+   ```properties
+   android.jetifier.ignorelist=armeabi_v7a_,arm64_v8a_,x86_64_,flutter_embedding_
+   ```
+
+3. Em terminais com app assinado pelo fabricante (por exemplo Gertec), assine o APK com a chave fornecida pelo fabricante.
+
+## Uso rápido
 
 ```dart
 import 'package:clisitef_payment_tech/clisitef_payment_tech.dart';
+import 'package:flutter/services.dart';
 
-await ClisitefTech.I.initPayment(licenceKey: 'SUA_LICENCA');
+const settings = SitefSettingsClisitef(
+  serverIp: '192.168.0.10', // IP do servidor SiTef
+  storeCode: '00000000', // código da loja (8 dígitos)
+  posNumber: 'IP000001', // número do terminal
+);
+
+Future<void> vender() async {
+  final payment = await ClisitefTech.I.initPayment();
+
+  final config = await payment.configureClisitef(sitefSettings: settings);
+  if (config != 0) {
+    print(TefHelper.checkErrorConfigTEF(config)[config]);
+    return;
+  }
+
+  try {
+    final response = await payment.clisitefTransaction(
+      sitefSettings: settings,
+      sitefTransaction: const SitefTransactionClisitef(
+        sitefModality: SitefModalityClisitef.creditCard,
+        valuePayment: '10,00',
+        couponNumber: '123',
+        dateFiscal: '20261127', // AAAAMMDD
+        hourFiscal: '153000', // HHMMSS
+        operatorPos: 'caixa1',
+      ),
+    );
+
+    if (response.resultCode == 0) {
+      print('Aprovada: NSU ${response.tefNSUSitef}, autorização ${response.tefCodAuthorization}');
+      print(response.customerReceipt);
+    } else {
+      print('Não aprovada (${response.resultCode}): ${response.errorTransaction}');
+    }
+  } on PlatformException catch (e) {
+    print('Erro no plugin: ${e.code} ${e.message}');
+  }
+}
 ```
 
-Os modelos ficam em `package:clisitef_payment_tech/payments/model/...`:
+## Referência da API
+
+Tudo é exportado por `package:clisitef_payment_tech/clisitef_payment_tech.dart`.
+
+### `ClisitefTech`
+
+Instância única em `ClisitefTech.I`.
+
+| Membro | Retorno | Descrição |
+| --- | --- | --- |
+| `initPayment()` | `Future<Payment>` | Cria (ou devolve) a instância de `Payment`. Não chama o nativo nem recebe parâmetros. |
+| `payment` | `Payment` | A mesma instância de `Payment`, criada sob demanda. Pode ser usada sem `initPayment`. |
 
 ```dart
-import 'package:clisitef_payment_tech/payments/enum/sitef_modality.dart';
-import 'package:clisitef_payment_tech/payments/model/sitef_settings.dart';
-import 'package:clisitef_payment_tech/payments/model/sitef_transaction.dart';
-import 'package:clisitef_payment_tech/payments/model/tef_transaction_response.dart';
+final payment = await ClisitefTech.I.initPayment();
+// ou
+final payment = ClisitefTech.I.payment;
 ```
 
-Através da função abaixo você irá realizar o setup do SDK conforme documentação da Fiserv. Passe como parâmetro as credenciais.
+### `Payment`
+
+#### `configureClisitef`
 
 ```dart
-final int result = await ClisitefTech.I.payment.configureClisitef(
-  sitefSettings: const SitefSettingsClisitef(
-    serverIp: '...',
-    storeCode: '...',
-    posNumber: '...',
-  ),
+Future<int> configureClisitef({required SitefSettingsClisitef sitefSettings})
+```
+
+Chama o `configure` da CliSiTef com `serverIp`, `storeCode`, `posNumber` e `additionalParameters`. Retorna o código do SDK: `0` é sucesso; os demais estão em [Tratamento de erros](#tratamento-de-erros).
+
+```dart
+final code = await ClisitefTech.I.payment.configureClisitef(sitefSettings: settings);
+```
+
+#### `clisitefTransaction`
+
+```dart
+Future<TefTransactionResponseClisitef> clisitefTransaction({
+  required SitefSettingsClisitef sitefSettings,
+  required SitefTransactionClisitef sitefTransaction,
+})
+```
+
+Configura a CliSiTef com `sitefSettings` e abre o fluxo de transação na modalidade de `sitefTransaction`. O `Future` completa quando o fluxo termina, com a resposta da transação. Em crédito e débito, `sitefSettings.enabledTransactions` é enviado como restrição de transações.
+
+```dart
+final response = await ClisitefTech.I.payment.clisitefTransaction(
+  sitefSettings: settings,
+  sitefTransaction: transaction,
 );
 ```
 
-Transação:
-Utilize a função abaixo para chamar um método de pagamento, passando os devidos parâmetros solicitados.
+### Modelos
+
+#### `SitefSettingsClisitef`
+
+| Campo | Uso |
+| --- | --- |
+| `serverIp` | IP (ou nome) do servidor SiTef. |
+| `storeCode` | Código da loja (8 dígitos). |
+| `posNumber` | Número do terminal (ex.: `IP000001`). |
+| `additionalParameters` | Parâmetros adicionais da CliSiTef (ex.: `[TipoPinPad=Android_AUTO]`). |
+| `enabledTransactions` | Restrições de transações, usadas no crédito e no débito. |
+| `operatorPos`, `companyDocument`, `lib`, `comExternal`, `isDoubleValidation`, `otp`, `automationDocument` | Dados do estabelecimento e do m-SiTef. Não são usados por `configureClisitef`/`clisitefTransaction`. |
+
+Também tem `copyWith`, `toMap`/`fromMap` e `toJson`/`fromJson`.
+
+#### `SitefTransactionClisitef`
+
+| Campo | Uso |
+| --- | --- |
+| `sitefModality` | `SitefModalityClisitef` da transação. |
+| `valuePayment` | Valor com vírgula decimal (ex.: `'10,00'`). Use `TefHelper.priceSanitized(10.0)`. |
+| `couponNumber` | Número do cupom fiscal / documento. |
+| `dateFiscal` | Data fiscal `AAAAMMDD`. |
+| `hourFiscal` | Hora fiscal `HHMMSS`. |
+| `operatorPos` | Operador. |
+| `additionalParameters` | Reservado (não é enviado ao nativo). |
+
+#### `TefTransactionResponseClisitef`
+
+Principais campos:
+
+| Campo | Conteúdo |
+| --- | --- |
+| `resultCode` | `0` = aprovada. `99999` = retorno `0` sem NSU do autorizador. `999999` = sem resposta. Outros valores: código do CliSiTef. |
+| `errorTransaction` | Mensagem do código de retorno (nula quando aprovada). |
+| `tefNSUSitef`, `tefNSUAuthorizing` | NSU do SiTef e do autorizador. |
+| `tefCodAuthorization` | Código de autorização. |
+| `tefInstitution`, `tefCodInstitution` | Bandeira/instituição. |
+| `tefCodPayment`, `tefDescPayment`, `tefCardType`, `binCard`, `cardNumber`, `cardNumberLast` | Forma de pagamento e dados do cartão. |
+| `tefDigitalWalletId`, `tefDigitalWalletType`, `tefDigitalWalletName` | Carteira digital / PIX. |
+| `customerReceipt`, `establishmentReceipt` | Comprovantes (via do cliente e do estabelecimento). |
+| `transactionDateTime`, `paymentAmount`, `amountCancelled`, `codeDocumentCanceled`, `cancellationMode` | Data, valores e dados de cancelamento. |
+| `transactionConfirmation`, `compDadosConf`, `codTrans`, `redeAut`, `typeFields` | Dados de confirmação e campos brutos do SDK. |
+
+### Enums
+
+#### `SitefModalityClisitef`
+
+| Valor | Modalidade CliSiTef |
+| --- | --- |
+| `creditCard` | `3` |
+| `debitCard` | `2` |
+| `pix` | `122` |
+| `digitalWallet` | `122` |
+| `cancellation` | `200` |
+| `undefined` | `0` (menu geral) |
+
+### Utilitários e contratos
+
+- `TefHelper.priceSanitized(double)`: formata o valor com vírgula decimal (`10.5` → `'10,50'`).
+- `TefHelper.checkErrorConfigTEF(int)` / `TefHelper.checkErrorTransactionTEF(int)`: `Map<int, String>` com a mensagem do código.
+- `TefHelper.sanitizeSitefSettingsClisitef(settings)`: deixa só os dígitos de loja e terminal, completa com zeros à esquerda até 8 posições e limpa os documentos.
+- `IClisitefHandler`: contrato com `onError`, `onMessage`, `onChanged`, `onFinishedResponse`, `onLoading` e `onAuthProgress` para tratar mensagens do canal. O fluxo atual de `clisitefTransaction` mostra as mensagens nas telas nativas e não depende dele.
+
+## Exemplos por operação
+
+As configurações usadas abaixo:
 
 ```dart
-final TefTransactionResponseClisitef response =
-    await ClisitefTech.I.payment.clisitefTransaction(
-  sitefSettings: sitefSettings,
-  sitefTransaction: sitefTransaction,
+const settings = SitefSettingsClisitef(
+  serverIp: '192.168.0.10',
+  storeCode: '00000000',
+  posNumber: 'IP000001',
+);
+
+SitefTransactionClisitef venda(SitefModalityClisitef modality, double valor) {
+  final now = DateTime.now();
+  String two(int v) => v.toString().padLeft(2, '0');
+  return SitefTransactionClisitef(
+    sitefModality: modality,
+    valuePayment: TefHelper.priceSanitized(valor),
+    couponNumber: now.millisecondsSinceEpoch.toString(),
+    dateFiscal: '${now.year}${two(now.month)}${two(now.day)}',
+    hourFiscal: '${two(now.hour)}${two(now.minute)}${two(now.second)}',
+    operatorPos: 'caixa1',
+  );
+}
+
+final payment = ClisitefTech.I.payment;
+```
+
+### Crédito à vista ou parcelado
+
+O CliSiTef pergunta nas telas se é à vista ou parcelado e o número de parcelas.
+
+```dart
+final r = await payment.clisitefTransaction(
+  sitefSettings: settings,
+  sitefTransaction: venda(SitefModalityClisitef.creditCard, 150.0),
 );
 ```
+
+### Débito
+
+```dart
+final r = await payment.clisitefTransaction(
+  sitefSettings: settings,
+  sitefTransaction: venda(SitefModalityClisitef.debitCard, 25.9),
+);
+```
+
+### Restringir transações no crédito/débito
+
+```dart
+final r = await payment.clisitefTransaction(
+  sitefSettings: settings.copyWith(enabledTransactions: '16;26'),
+  sitefTransaction: venda(SitefModalityClisitef.creditCard, 50.0),
+);
+```
+
+Os códigos de restrição são os da documentação da CliSiTef.
+
+### PIX / carteira digital
+
+O QR Code é exibido pela tela do plugin.
+
+```dart
+final r = await payment.clisitefTransaction(
+  sitefSettings: settings,
+  sitefTransaction: venda(SitefModalityClisitef.pix, 30.0),
+);
+print(r.tefDigitalWalletName);
+```
+
+### Cancelamento (estorno)
+
+O CliSiTef pede nas telas os dados da transação original (data, NSU, valor).
+
+```dart
+final r = await payment.clisitefTransaction(
+  sitefSettings: settings,
+  sitefTransaction: venda(SitefModalityClisitef.cancellation, 150.0),
+);
+print(r.amountCancelled);
+```
+
+### Menu geral (reimpressão e outras funções)
+
+```dart
+final r = await payment.clisitefTransaction(
+  sitefSettings: settings,
+  sitefTransaction: venda(SitefModalityClisitef.undefined, 0),
+);
+```
+
+### Comprovantes
+
+O plugin não imprime: use `customerReceipt` e `establishmentReceipt` com a impressora do seu terminal.
+
+```dart
+if (r.resultCode == 0) {
+  imprimir(r.customerReceipt);
+  imprimir(r.establishmentReceipt);
+}
+```
+
+## Tratamento de erros
+
+### `PlatformException`
+
+| Código | Quando |
+| --- | --- |
+| `NO_ACTIVITY` | O plugin ainda não está ligado a uma Activity (chamada antes de o app estar em primeiro plano). |
+| `CONFIGURE_ERROR` | Em `clisitefTransaction`, o `configure` da CliSiTef falhou antes de abrir a transação. `details` traz o código (tabela de `configureClisitef` abaixo). |
+| `UNEXPECTED_ERROR` | Exceção no nativo ao processar a chamada. `message` traz o detalhe. |
+
+Um método que o nativo não conhece gera `MissingPluginException`.
+
+### Retorno de `configureClisitef`
+
+| Código | Significado |
+| --- | --- |
+| `0` | Configurado. |
+| `1` | Endereço IP inválido ou não resolvido. |
+| `2` | Código da loja inválido. |
+| `3` | Código de terminal inválido. |
+| `6` | Erro na inicialização do TCP/IP. |
+| `7` | Falta de memória. |
+| `8` | CliSiTef não encontrada ou com problemas. |
+| `9` | Configuração de servidores SiTef excedida. |
+| `10` | Erro de acesso à pasta da CliSiTef (permissão de escrita). |
+| `11` | Dados inválidos passados pela automação. |
+| `12` | Modo seguro não ativo (falta de configuração do `.cha` no servidor). |
+| `13` | Caminho de bibliotecas inválido. |
+
+### `resultCode` da transação
+
+`0` é aprovada. `-1` faz o plugin reconfigurar e tentar de novo. Os demais códigos vêm do CliSiTef/autorizador, e `errorTransaction` traz a mensagem (tabela em `TefHelper.checkErrorTransactionTEF`). `99999` indica retorno `0` sem NSU do autorizador, e `999999`, que o fluxo terminou sem resposta.
+
+## App de exemplo
+
+O `example/` tem uma tela com os dados do servidor SiTef, o valor e botões para configurar o TEF e fazer crédito, débito, PIX e cancelamento.
+
+```bash
+cd example
+flutter run
+```
+
+Rode num terminal Android com PIN pad e acesso ao servidor SiTef. O build do example assina com as chaves de `example/Chaves`, que não são publicadas no pub.dev. Num clone sem essas chaves, ajuste o `signingConfig` em `example/android/app/build.gradle`.
 
 ## Testes
 
-Testes Dart (canal de plataforma e propagação de `LICENCE_ERROR`):
+Testes Dart (canal de plataforma, parâmetros, modalidades e resposta):
 
 ```bash
 flutter test
 ```
 
-Testes JVM do nativo (URL travada, regras da licença, resposta do servidor e cache offline), com JDK 17:
+Testes JVM do módulo nativo (roteamento do plugin), com JDK 17:
 
 ```bash
 FLUTTER_SDK=$(dirname $(dirname $(which flutter))) \
-  example/android/gradlew -p android/native testDebugUnitTest
+  example/android/gradlew -p android/native testDebugUnitTest \
+  --no-daemon -Dorg.gradle.jvmargs=-Xmx2g
 ```
 
-Depois de alterar o código em `android/native`, regenere os binários com `make build-native` (ou `sh scripts/build_android_aar.sh`).
+O código Java fica em `android/native` e é distribuído pré-compilado em `android/libs/clisitef_payment_tech-native.jar`. Depois de alterar `android/native`, regenere os binários:
 
-</br>
+```bash
+JAVA_TOOL_OPTIONS=-Xmx2g sh scripts/build_android_aar.sh
+```
 
-## :memo: License
+## Migração da 3.x para a 4.0.0
 
-This project is under license from MIT. For more details, see the [LICENSE](LICENSE.md) file.
+A licença paga foi removida. Mudanças:
 
-</br>
+- `initPayment` não recebe mais `licenceKey` nem `licenceInternalKey`.
+- A constante `licenceCheck` e o import `package:clisitef_payment_tech/licence/constants/licence_constants.dart` não existem mais. `channel` e `CHANNEL_NAME` estão em `payments/payment.dart`, exportado pelo pacote.
+- `Payment.ensureInitialized` foi removido.
+- Os erros `LICENCE_ERROR` e `LICENCE_NOT_INITIALIZED` não existem mais: remova esse tratamento.
+- Os modelos podem ser importados direto de `package:clisitef_payment_tech/clisitef_payment_tech.dart` (os imports antigos por caminho continuam funcionando).
+- `clisitefTransaction` não lança mais `TypeError` ao ler a resposta do nativo, e uma falha de configuração agora vira `PlatformException(code: 'CONFIGURE_ERROR')` em vez de deixar o `Future` sem resposta.
+- As `.so`, os assets, os layouts e as activities da CliSiTef voltaram a entrar no APK (estavam faltando desde a 3.0.0). Se você copiou esses arquivos para o seu app como contorno, pode removê-los.
 
-<table>
-  <tr>
-    <td align="center"><a href="https://github.com/JY-Labtech"><img src="https://avatars.githubusercontent.com/u/185066406?s=200&v=4" width="100px;" alt=""/><br /><sub><b>JY Labtech</b></sub></a><br /> <a href="https://github.com/JY-Labtech" title="Autor"></a></td>
-  </tr>
-  
-</table>
+Antes (3.x):
 
-Feito por <a href="https://github.com/jhonathanqz" target="_blank">Jhonathan Queiroz</a>
+```dart
+import 'package:clisitef_payment_tech/clisitef_payment_tech.dart';
+import 'package:clisitef_payment_tech/payments/model/sitef_settings.dart';
 
-&#xa0;
+try {
+  await ClisitefTech.I.initPayment(licenceKey: 'SUA_LICENCA');
+} on PlatformException catch (e) {
+  if (e.code == 'LICENCE_ERROR') {
+    // licença inválida
+  }
+}
+final code = await ClisitefTech.I.payment.configureClisitef(sitefSettings: settings);
+```
 
-<a href="#top">Back to top</a>
+Depois (4.0.0):
+
+```dart
+import 'package:clisitef_payment_tech/clisitef_payment_tech.dart';
+
+await ClisitefTech.I.initPayment();
+final code = await ClisitefTech.I.payment.configureClisitef(sitefSettings: settings);
+```
+
+## Contribuindo
+
+Issues e pull requests são bem-vindos em https://github.com/JY-Labtech/clisitef_payment_tech/issues. Antes de abrir um PR, rode `flutter analyze`, `flutter test` e os testes nativos. Se mexer em `android/native`, regenere os binários com `scripts/build_android_aar.sh`.
+
+## Licença
+
+[MIT](LICENSE). O SDK CliSiTef e as bibliotecas Gertec/PPComp em `android/libs` são dos seus fabricantes e seguem os termos deles.
+
+## Créditos
+
+Desenvolvido por [JY Labtech](https://jylabtech.com.br), com autoria de [Jhonathan Queiroz](https://github.com/jhonathanqz).

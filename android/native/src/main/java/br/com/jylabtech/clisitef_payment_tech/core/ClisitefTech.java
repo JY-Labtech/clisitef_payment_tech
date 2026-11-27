@@ -4,11 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
-import br.com.jylabtech.clisitef_payment_tech.licence.CheckLicenceTech;
-import br.com.jylabtech.clisitef_payment_tech.licence.LicenceResult;
-import br.com.jylabtech.clisitef_payment_tech.licence.LicenceRules;
 import br.com.jylabtech.clisitef_payment_tech.presenter.PaymentsPresenter;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
@@ -16,22 +12,27 @@ import io.flutter.plugin.common.MethodChannel;
 public final class ClisitefTech {
 
     private final Context context;
-    private final CheckLicenceTech licenceTech;
 
-    private PaymentsPresenter paymentPresenter;
+    /** Código enviado ao Dart quando o configure da CliSiTef falha antes da transação. */
+    public static final String CONFIGURE_ERROR = "CONFIGURE_ERROR";
+
+    private PaymentOperations paymentPresenter;
     private Activity activity;
-    private String licenceKey = "";
-    private String licenceInternalKey = "";
 
     public ClisitefTech(@NonNull Context context,
                         @NonNull Activity activity) {
         this.context = context;
         this.activity = activity;
-        this.licenceTech = new CheckLicenceTech(context);
     }
 
-    /** Métodos de negócio que exigem licença válida antes de chamar o SDK. */
-    public static boolean isLicensedMethod(@NonNull String method) {
+    /** Construtor para testes, com as operações já criadas. */
+    ClisitefTech(@NonNull PaymentOperations operations) {
+        this.context = null;
+        this.paymentPresenter = operations;
+    }
+
+    /** Métodos do canal tratados pelo plugin (os demais respondem notImplemented). */
+    public static boolean isSupportedMethod(@NonNull String method) {
         return method.startsWith("configureTef")
                 || method.startsWith("startTransaction")
                 || method.startsWith("transactionMsitef")
@@ -39,12 +40,13 @@ public final class ClisitefTech {
     }
 
     /**
-     * Executa o método de negócio. Deve ser chamado na main thread e somente depois
-     * de {@link #validateLicence()} retornar sucesso (o gate fica no plugin, que
-     * valida em background antes de chegar aqui).
+     * Executa o método de negócio no SDK. Deve ser chamado na main thread.
+     *
+     * @return {@code true} se a resposta ao Dart virá depois, por onActivityResult;
+     * {@code false} se o {@code result} já foi respondido aqui.
      */
-    public void handleMethodCall(@NonNull MethodCall call,
-                                 @NonNull MethodChannel.Result result) throws Exception {
+    public boolean handleMethodCall(@NonNull MethodCall call,
+                                    @NonNull MethodChannel.Result result) throws Exception {
         ensurePresenter();
 
         if (paymentPresenter == null) {
@@ -53,38 +55,33 @@ public final class ClisitefTech {
                     "Plugin não está associado a uma Activity. Aguarde onAttachedToActivity.",
                     null
             );
-            return;
+            return false;
         }
 
         if (call.method.startsWith("configureTef")) {
             int configureResult = paymentPresenter.configureTef(call);
             result.success(configureResult);
+            return false;
         } else if (call.method.startsWith("startTransaction")) {
-            paymentPresenter.clisitefTransaction(call);
+            int configureResult = paymentPresenter.clisitefTransaction(call);
+            if (configureResult != 0) {
+                result.error(
+                        CONFIGURE_ERROR,
+                        "Falha ao configurar a CliSiTef antes da transação (código " + configureResult + ").",
+                        configureResult
+                );
+                return false;
+            }
+            return true;
         } else if (call.method.startsWith("transactionMsitef")) {
             paymentPresenter.mSitefTransaction(call);
+            return true;
         } else if (call.method.startsWith("menuMSitef")) {
             paymentPresenter.mSitefMenu(call);
-        } else {
-            result.notImplemented();
+            return true;
         }
-    }
-
-    public void updateLicenceKeys(@Nullable String licenceKey, @Nullable String licenceInternalKey) {
-        this.licenceKey = licenceKey != null ? licenceKey : "";
-        this.licenceInternalKey = licenceInternalKey != null ? licenceInternalKey : "";
-    }
-
-    /**
-     * Valida a licença (cache válido ou servidor oficial). Faz I/O: chame fora da main thread.
-     * Um {@code licenceInternalKey} vazio usa a URL padrão do core.
-     */
-    public LicenceResult validateLicence() {
-        if (licenceKey == null || licenceKey.trim().isEmpty()) {
-            return LicenceRules.error("Licença não configurada. Chame ClisitefTech.I.initPayment com o licenceKey.");
-        }
-
-        return licenceTech.validateLicence(licenceKey, licenceInternalKey);
+        result.notImplemented();
+        return false;
     }
 
     public void updateActivity(@NonNull Activity activity) {

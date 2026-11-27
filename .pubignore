@@ -35,3 +35,14 @@ example/Chaves/
 **/key.properties
 .DS_Store
 **/.DS_Store
+
+# Arquivos locais, relatórios e dumps de memória do Gradle
+doc/
+*.hprof
+**/build/
+*.jks
+*.keystore
+**/ephemeral/
+*.iml
+**/.idea/
+**/.gradle/
